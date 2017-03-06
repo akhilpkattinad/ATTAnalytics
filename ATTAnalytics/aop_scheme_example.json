@@ -1,0 +1,109 @@
+{
+  "analytics": [
+    {
+      "agent": "GoogleAnalytics",
+      "type": "Analytics",
+      "url": "https://www.google.co.in",
+      "flush_interval": 1,
+      "post_to_url": true,
+      "agent_enabled": true,
+      "data_field": [
+        {
+          "agentKey": "GA_Home Page",
+          "app_specific_key": "homePage",
+          "app_specific_class": "HomeViewController",
+          "app_specific_method": "",
+          "key_type": "state",
+          "param": [
+            {
+              "param_agentKey": "ga_key",
+              "param_localkey": "launch_app"
+            },
+            {
+              "param_agentKey": "ga_key2",
+              "param_localkey": "app_exit"
+            }
+          ]
+        },
+        {
+          "agentKey": "GA_regComplete",
+          "app_specific_key": "regComplete",
+          "app_specific_class": "RegViewController",
+          "app_specific_method": "regClicked:",
+          "key_type": "action",
+          "param": [
+            {
+              "param_agentKey": "GA_loginStatus",
+              "param_localkey": "loginStatus"
+            },
+            {
+              "param_agentKey": "GA_token",
+              "param_localkey": "token"
+            }
+          ]
+        },
+        {
+          "agentKey": "GA_aCustomEvent",
+          "app_specific_key": "customEventKeyword",
+          "app_specific_class": "",
+          "app_specific_method": "",
+          "key_type": "action",
+          "param": [
+            {
+              "param_agentKey": "GA_loginStatus",
+              "param_localkey": "loginStatus"
+            },
+            {
+              "param_agentKey": "GA_token",
+              "param_localkey": "token"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "agent": "Omniture",
+      "type": "Analytics",
+      "url": "https://www.google.co.in",
+      "flush_interval": 1,
+      "post_to_url": true,
+      "agent_enabled": true,
+      "data_field": [
+        {
+          "agentKey": "OM_Home Page",
+          "app_specific_key": "homePage",
+          "app_specific_class": "HomeViewController",
+          "app_specific_method": "",
+          "key_type": "state",
+          "param": [
+            {
+              "param_agentKey": "om_key",
+              "param_localkey": "launch_app"
+            },
+            {
+              "param_agentKey": "om_key2",
+              "param_localkey": "app_exit"
+            }
+          ]
+        },
+        {
+          "agentKey": "OM_regComplete",
+          "app_specific_key": "regComplete",
+          "app_specific_class": "HomeViewController",
+          "app_specific_method": "regClicked:",
+          "key_type": "action",
+          "param": [
+            {
+              "param_agentKey": "OM_loginStatus",
+              "param_localkey": "loginStatus"
+            },
+            {
+              "param_agentKey": "OM_token",
+              "param_localkey": "token"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
