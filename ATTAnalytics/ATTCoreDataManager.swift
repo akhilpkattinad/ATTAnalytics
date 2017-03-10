@@ -118,16 +118,16 @@ class ATTCoreDataManager: NSObject {
             let entity = NSEntityDescription.entity(forEntityName: "Screen",
                                                     in: self.currentContext()!)!
             
-            let aScreen = NSManagedObject(entity: entity, insertInto: self.currentContext())
+            let newScreen = NSManagedObject(entity: entity, insertInto: self.currentContext())
             
-            aScreen.setValue(screenViewModel?.screenViewID,         forKeyPath: "screenViewID")
-            aScreen.setValue(screenViewModel?.previousScreenName,   forKeyPath: "previousScreen")
-            aScreen.setValue(screenViewModel?.screenName,           forKeyPath: "presentScreen")
-            aScreen.setValue(screenViewModel?.screeViewDuration,    forKeyPath: "screenWatchDuration")
-            aScreen.setValue(screenViewModel?.screenViewBeginTime,  forKeyPath: "screenWatchedTime")
-            aScreen.setValue(screenViewModel?.latitude,             forKeyPath: "latitude")
-            aScreen.setValue(screenViewModel?.longitude,            forKeyPath: "longitude")
-            aScreen.setValue(false,                                 forKeyPath: "syncStatus")
+            newScreen.setValue(screenViewModel?.screenViewID,         forKeyPath: "screenViewID")
+            newScreen.setValue(screenViewModel?.previousScreenName,   forKeyPath: "previousScreen")
+            newScreen.setValue(screenViewModel?.screenName,           forKeyPath: "presentScreen")
+            newScreen.setValue(screenViewModel?.screeViewDuration,    forKeyPath: "screenWatchDuration")
+            newScreen.setValue(screenViewModel?.screenViewBeginTime,  forKeyPath: "screenWatchedTime")
+            newScreen.setValue(screenViewModel?.latitude,             forKeyPath: "latitude")
+            newScreen.setValue(screenViewModel?.longitude,            forKeyPath: "longitude")
+            newScreen.setValue(false,                                 forKeyPath: "syncStatus")
             
             self.saveContext()
         }
@@ -169,23 +169,23 @@ class ATTCoreDataManager: NSObject {
             let entity = NSEntityDescription.entity(forEntityName: "Events",
                                                     in: self.currentContext()!)!
             
-            let anEvent = NSManagedObject(entity: entity, insertInto: self.currentContext()!)
+            let newEvent = NSManagedObject(entity: entity, insertInto: self.currentContext()!)
             
-            anEvent.setValue(event?.screenViewID,   forKeyPath: "screenViewID")
-            anEvent.setValue(event?.eventType,      forKeyPath: "eventType")
-            anEvent.setValue(event?.eventStartTime, forKeyPath: "eventStartTime")
-            anEvent.setValue(event?.eventName,      forKeyPath: "eventName")
-            anEvent.setValue(event?.eventDuration,  forKeyPath: "eventDuration")
-            anEvent.setValue(event?.latitude,       forKeyPath: "latitude")
-            anEvent.setValue(event?.longitude,      forKeyPath: "longitude")
+            newEvent.setValue(event?.screenViewID,   forKeyPath: "screenViewID")
+            newEvent.setValue(event?.eventType,      forKeyPath: "eventType")
+            newEvent.setValue(event?.eventStartTime, forKeyPath: "eventStartTime")
+            newEvent.setValue(event?.eventName,      forKeyPath: "eventName")
+            newEvent.setValue(event?.eventDuration,  forKeyPath: "eventDuration")
+            newEvent.setValue(event?.latitude,       forKeyPath: "latitude")
+            newEvent.setValue(event?.longitude,      forKeyPath: "longitude")
             
             if event?.dataURL != nil {
-                anEvent.setValue(event?.dataURL, forKeyPath: "dataURL")
+                newEvent.setValue(event?.dataURL, forKeyPath: "dataURL")
             }
             
             if event?.arguments != nil {
                 let data = try? JSONSerialization.data(withJSONObject: (event?.arguments)!, options: [])
-                anEvent.setValue(data, forKeyPath: "customParam")
+                newEvent.setValue(data, forKeyPath: "customParam")
             }
             
             self.saveContext()
