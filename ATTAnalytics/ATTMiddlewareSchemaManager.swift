@@ -110,7 +110,7 @@ class ATTMiddlewareSchemaManager: NSObject {
     
     func updateScreenCloseDetails(previousScreen:String?) -> Void {
         self.screenViewModel?.previousScreenName = previousScreen
-        self.screenViewModel?.screeViewDuration = -(self.screenViewModel?.screenViewBeginTime?.timeIntervalSinceNow)!
+        self.screenViewModel?.screeViewDuration = (self.screenViewModel?.screenViewBeginTime?.timeIntervalSinceNow)!
         self.coreDataManager.updateScreenView(screenViewModel: self.screenViewModel)
     }
     

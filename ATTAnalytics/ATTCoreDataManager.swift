@@ -25,7 +25,7 @@ class ATTCoreDataManager: NSObject {
         let modelURL = Bundle.main.url(forResource: "ATTDB", withExtension: "momd")!
         return NSManagedObjectModel(contentsOf: modelURL)!
     }()
-     */
+    */
     // MARK: - PersistentStoreCoordinator for below ios 10 support
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR PRODUCTION PURPOSE ONLY - AFTER CONVERTING TO FRAMEWORK

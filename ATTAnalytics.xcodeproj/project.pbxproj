@@ -471,6 +471,7 @@
 				F9C4C5041E56C75100131516 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 
