@@ -42,7 +42,6 @@ public class ATTAnalytics: NSObject {
     private var screenViewID:String?
     private var stateChangeTrackingSelector:Selector?
     private var screenViewStart:Date?
-    private var previousScreenViewStart:Date?
     private let cacheDirectory = (NSSearchPathForDirectoriesInDomains(.cachesDirectory,
                                                                       .userDomainMask,
                                                                       true)[0] as String).appending("/")
@@ -387,7 +386,7 @@ public class ATTAnalytics: NSObject {
             && "\(self.classForCoder)" != "UITabBarController"
             && "\(self.classForCoder)" != "UIInputWindowController" {
             
-            ATTAnalytics.helper.autoTrackScreenChanges(viewController: self)
+            ATTAnalytics.helper.newScreenAppeared(viewController: self)
         }
     }
     
@@ -397,26 +396,21 @@ public class ATTAnalytics: NSObject {
             && "\(self.classForCoder)" != "UITabBarController"
             && "\(self.classForCoder)" != "UIInputWindowController" {
             
-            ATTAnalytics.helper.presentScreenDisappeared(viewController: self)
+            ATTAnalytics.helper.screenDisappeared(viewController: self)
         }
     }
     
-    func autoTrackScreenChanges(viewController:NSObject?) -> Void {
+    func newScreenAppeared(viewController:NSObject?) -> Void {
         if let topViewController = viewController as? UIViewController {
             self.presentViewControllerName = "\(topViewController.classForCoder)"
             self.triggerEventForTheVisibleViewController(viewController:topViewController)
             self.createNewScreenView(withClass: topViewController.classForCoder)
-            self.formulatePreviousScreenActivityObject()
+            self.previousViewControllerName = self.presentViewControllerName
         }
     }
     
-    func presentScreenDisappeared(viewController:NSObject?) -> Void {
-        if let topViewController = viewController as? UIViewController {
-            if self.presentViewControllerName == "\(topViewController.classForCoder)" {
-                self.previousViewControllerName = "\(topViewController.classForCoder)"
-                self.previousScreenViewStart = self.screenViewStart
-            }
-        }
+    func screenDisappeared(viewController:NSObject?) -> Void {
+        self.updatePreviousScreenActivityObject()
     }
     
     private func createNewScreenView(withClass aClass:AnyClass?) -> Void {
@@ -425,15 +419,13 @@ public class ATTAnalytics: NSObject {
         
         ATTMiddlewareSchemaManager.manager.startNewScreenViewWithScreenID(screenViewID: self.screenViewID,
                                                                           screenName: self.presentViewControllerName,
+                                                                          previousScreen:self.previousViewControllerName,
                                                                           screenClass:aClass,
                                                                           screenViewBeginAt: self.screenViewStart)
     }
     
-    private func formulatePreviousScreenActivityObject() -> Void {
-        var previousScreen = self.previousViewControllerName
-        if previousScreen == nil { previousScreen = "" }
-        
-        ATTMiddlewareSchemaManager.manager.updateScreenCloseDetails(previousScreen: previousScreen)
+    private func updatePreviousScreenActivityObject() -> Void {
+        ATTMiddlewareSchemaManager.manager.updateScreenCloseDetails()
     }
     
     /////////////////////////////////////////////////////////////////////////////////////

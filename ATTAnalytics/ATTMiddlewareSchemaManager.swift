@@ -15,11 +15,13 @@ class ATTMiddlewareSchemaManager: NSObject {
     private var screenEventsArray:Array<AnyObject>?
     
     var screenViewModel:ATTScreenViewModel?
+    var previousScreenViewModel:ATTScreenViewModel?
     var locationManager:ATTLocationManager?
     var appInfo:Dictionary<String, AnyObject>?
     var appLaunched:Bool?
     var lastViewedScreen:String?
     var lastViewedScreenClass:AnyClass?
+    var previousScreenName:String?
     
     // MARK: Lazy initializations
     lazy var syncableSchemaArray: Array<AnyObject> = {
@@ -85,6 +87,7 @@ class ATTMiddlewareSchemaManager: NSObject {
         if self.appLaunched == false {
             self.startNewScreenViewWithScreenID(screenViewID: self.newScreenViewID(),
                                                 screenName: self.lastViewedScreen,
+                                                previousScreen:self.previousScreenName,
                                                 screenClass: self.lastViewedScreenClass,
                                                 screenViewBeginAt: Date())
             self.appLaunched = false
@@ -94,24 +97,33 @@ class ATTMiddlewareSchemaManager: NSObject {
     // MARK: - Screen view events
     func startNewScreenViewWithScreenID(screenViewID:String?,
                                         screenName name:String?,
+                                        previousScreen previousScreenName:String?,
                                         screenClass aClass:AnyClass?,
                                         screenViewBeginAt screenViewBeginTime:Date?) -> Void {
         self.lastViewedScreen = name
         self.lastViewedScreenClass = aClass
+        self.previousScreenName = previousScreenName
         
         self.screenViewModel = ATTScreenViewModel(screenViewID:screenViewID,
                                                   screenName:name,
+                                                  previousScreen:previousScreenName,
                                                   screenViewBeginAt:screenViewBeginTime,
                                                   latitude:self.locationManager?.latitude,
                                                   longitude:self.locationManager?.longitude)
+        if self.previousScreenViewModel == nil {
+            self.previousScreenViewModel = screenViewModel
+        }
         
         self.coreDataManager.createScreenView(screenViewModel: self.screenViewModel)
     }
     
-    func updateScreenCloseDetails(previousScreen:String?) -> Void {
-        self.screenViewModel?.previousScreenName = previousScreen
-        self.screenViewModel?.screeViewDuration = ((self.screenViewModel?.screenViewBeginTime?.timeIntervalSinceNow)!)/1000.0
-        self.coreDataManager.updateScreenView(screenViewModel: self.screenViewModel)
+    func updateScreenCloseDetails() -> Void {
+        if self.previousScreenViewModel != nil {
+            self.previousScreenViewModel?.screeViewDuration = -(self.previousScreenViewModel?.screenViewBeginTime?.timeIntervalSince(ATTAnalytics.helper.currentLocalDate()))!
+            self.coreDataManager.updateScreenView(screenViewModel: self.previousScreenViewModel)
+        }
+        
+        self.previousScreenViewModel = self.screenViewModel
     }
     
     // MARK: - Button action events
@@ -167,11 +179,12 @@ extension ATTMiddlewareSchemaManager:ATTFlushManagerDelegate {
             
             let screenModel = ATTScreenViewModel(screenViewID:eachScreen.value(forKeyPath: "screenViewID") as? String,
                                                  screenName:eachScreen.value(forKeyPath: "presentScreen") as? String,
+                                                 previousScreen:eachScreen.value(forKeyPath: "previousScreen") as? String,
                                                  screenViewBeginAt:eachScreen.value(forKeyPath: "screenWatchedTime") as? Date,
                                                  latitude:eachScreen.value(forKeyPath: "latitude") as? Double,
                                                  longitude:eachScreen.value(forKeyPath: "longitude") as? Double)
             
-            screenModel.previousScreenName = eachScreen.value(forKeyPath: "previousScreen") as? String
+            //screenModel.previousScreenName = eachScreen.value(forKeyPath: "previousScreen") as? String
             screenModel.screeViewDuration = eachScreen.value(forKeyPath: "screenWatchDuration") as? Double
             
             let screenEvents = self.coreDataManager.fetchEventWithScreenID(screenID: screenModel.screenViewID)! as Array<AnyObject>

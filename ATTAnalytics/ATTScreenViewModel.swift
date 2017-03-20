@@ -25,12 +25,14 @@ class ATTScreenViewModel: NSObject {
     
     convenience init(screenViewID:String?,
                      screenName name:String?,
+                     previousScreen previousScreenName:String?,
                      screenViewBeginAt screenViewBeginTime:Date?,
                      latitude lat:CLLocationDegrees?,
                      longitude log:CLLocationDegrees?) {
         self.init()
         
         self.screenViewID = screenViewID
+        self.previousScreenName = previousScreenName;
         self.screenName = name
         self.screenViewBeginTime = screenViewBeginTime
         self.latitude = lat

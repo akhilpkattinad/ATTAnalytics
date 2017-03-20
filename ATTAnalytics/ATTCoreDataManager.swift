@@ -99,6 +99,7 @@ class ATTCoreDataManager: NSObject {
         return container
     }()
     
+    
     func currentContext() -> NSManagedObjectContext? {
         var managedContext:AnyObject?
         if #available(iOS 10.0, *) {
