@@ -60,7 +60,7 @@ class ATTMiddlewareSchemaManager: NSObject {
     }
     
     func startFlushManager() -> Void {
-        self.flushManager = ATTFlushManager(flushInterval:100, delegate:self)
+        self.flushManager = ATTFlushManager(flushInterval:15, delegate:self)
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(ATTMiddlewareSchemaManager.applicationDidFinishedLaunching),
                                                name: NSNotification.Name.UIApplicationDidFinishLaunching,
@@ -77,6 +77,7 @@ class ATTMiddlewareSchemaManager: NSObject {
     
     func applicationDidFinishedLaunching() -> Void {
         self.appLaunched = true
+        self.flushManager?.resetIdentification()
     }
     
     func applicationDidEnterBackground() -> Void {
@@ -84,14 +85,20 @@ class ATTMiddlewareSchemaManager: NSObject {
     }
     
     func applicationDidBecomeActive() -> Void {
+        self.createSession()
         if self.appLaunched == false {
-            self.startNewScreenViewWithScreenID(screenViewID: self.newScreenViewID(),
+            self.startNewScreenViewWithScreenID(screenViewID: self.newUniqueID(),
                                                 screenName: self.lastViewedScreen,
                                                 previousScreen:self.previousScreenName,
                                                 screenClass: self.lastViewedScreenClass,
                                                 screenViewBeginAt: Date())
             self.appLaunched = false
         }
+    }
+    
+    // Session management
+    func createSession() -> Void {
+        self.flushManager?.createSession()
     }
     
     // MARK: - Screen view events
@@ -141,7 +148,6 @@ class ATTMiddlewareSchemaManager: NSObject {
     // MARK: - Custom events
     func createCustomEvent(eventName:String?,
                            eventStartTime startTime:Date?,
-                           dataURL:String?,
                            customArguments arguments:Dictionary<String, AnyObject>?,
                            eventDuration duration:Double?) -> Void {
         let newEvent = ATTEventModel(screenViewID:self.screenViewModel?.screenViewID,
@@ -151,12 +157,12 @@ class ATTMiddlewareSchemaManager: NSObject {
                                      eventDuration:duration,
                                      latitude:self.locationManager?.latitude,
                                      longitude:self.locationManager?.longitude,
-                                     dataURL:dataURL,
+                                     dataURL:"",
                                      customArguments:arguments)
         self.coreDataManager.createEvents(event: newEvent)
     }
     
-    func newScreenViewID() -> String? {
+    public func newUniqueID() -> String? {
         return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(self.timeStamp()!)"
     }
     

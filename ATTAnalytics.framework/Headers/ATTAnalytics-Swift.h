@@ -129,29 +129,34 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 + (NSString * _Nonnull)TrackingNotification;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull CrashTrackingNotification;)
 + (NSString * _Nonnull)CrashTrackingNotification;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull IdentifyNotification;)
++ (NSString * _Nonnull)IdentifyNotification;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull TrackingTypeAuto;)
 + (NSString * _Nonnull)TrackingTypeAuto;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull TrackingTypeManual;)
 + (NSString * _Nonnull)TrackingTypeManual;
+@property (nonatomic, copy) NSString * _Nullable appID;
 /**
   Shared Object
 */
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) ATTAnalytics * _Nonnull helper;)
 + (ATTAnalytics * _Nonnull)helper;
-- (void)beginTrackingWithPathForConfigFile:(NSString * _Nullable)pathForConfigFile;
-- (void)beginTrackingWithConfiguration:(NSDictionary<NSString *, id> * _Nullable)configuration;
-- (void)beginTrackingWithPathForConfigFile:(NSString * _Nullable)pathForConfigFile stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType;
-- (void)beginTrackingWithConfiguration:(NSDictionary<NSString *, id> * _Nullable)configuration stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType;
+- (void)beginTrackingWithAppID:(NSString * _Nullable)appID pathForConfigFile:(NSString * _Nullable)pathForConfigFile;
+- (void)beginTrackingWithAppID:(NSString * _Nullable)appID configuration:(NSDictionary<NSString *, id> * _Nullable)configuration;
+- (void)beginTrackingWithAppID:(NSString * _Nullable)appID pathForConfigFile:(NSString * _Nullable)pathForConfigFile stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType;
+- (void)beginTrackingWithAppID:(NSString * _Nullable)appID configuration:(NSDictionary<NSString *, id> * _Nullable)configuration stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType;
 /**
   Can be called manually for Manual event tracking
   <em>customArguments</em> is used when an object requires to trigger event with dynamic values
 */
-- (void)registerForTrackingWithAppSpecificKeyword:(NSString * _Nullable)keyword dataURL:(NSString * _Nullable)url customArguments:(NSDictionary<NSString *, id> * _Nullable)arguments customEvent:(ATTCustomEvent * _Nullable)event;
+- (void)registerForTrackingWithAppSpecificKeyword:(NSString * _Nullable)keyword customArguments:(NSDictionary<NSString *, id> * _Nullable)arguments customEvent:(ATTCustomEvent * _Nullable)event;
 /**
   Used to receive the crashlog events
   Must be called once inside AppDelegate’s <em>applicationDidBecomeActive</em>
 */
 - (void)registerForCrashLogging;
+- (void)identifyUserWithUserID:(NSString * _Nonnull)userId userProfile:(NSDictionary<NSString *, id> * _Nullable)profile;
+- (void)resetUser;
 - (nonnull instancetype)init OBJC_DESIGNATED_INITIALIZER;
 @end
 

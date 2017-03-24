@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		F91A30D11E8554B800FCF7BB /* ATTReachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91A30D01E8554B800FCF7BB /* ATTReachability.swift */; };
+		F91A30D31E8554C800FCF7BB /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F91A30D21E8554C800FCF7BB /* SystemConfiguration.framework */; };
+		F91A30D51E8554CE00FCF7BB /* CoreTelephony.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F91A30D41E8554CE00FCF7BB /* CoreTelephony.framework */; };
 		F92795601E1F6A8F00C7B0EA /* ATTAnalytics.h in Headers */ = {isa = PBXBuildFile; fileRef = F927955E1E1F6A8F00C7B0EA /* ATTAnalytics.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		F927956A1E1F6AB500C7B0EA /* ATTAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92795661E1F6AB500C7B0EA /* ATTAnalytics.swift */; };
 		F927956B1E1F6AB500C7B0EA /* ATTConfigConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92795671E1F6AB500C7B0EA /* ATTConfigConstants.swift */; };
@@ -29,6 +32,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		F91A30D01E8554B800FCF7BB /* ATTReachability.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ATTReachability.swift; sourceTree = "<group>"; };
+		F91A30D21E8554C800FCF7BB /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
+		F91A30D41E8554CE00FCF7BB /* CoreTelephony.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreTelephony.framework; path = System/Library/Frameworks/CoreTelephony.framework; sourceTree = SDKROOT; };
 		F927955B1E1F6A8F00C7B0EA /* ATTAnalytics.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = ATTAnalytics.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F927955E1E1F6A8F00C7B0EA /* ATTAnalytics.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ATTAnalytics.h; sourceTree = "<group>"; };
 		F927955F1E1F6A8F00C7B0EA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -58,6 +64,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F91A30D51E8554CE00FCF7BB /* CoreTelephony.framework in Frameworks */,
+				F91A30D31E8554C800FCF7BB /* SystemConfiguration.framework in Frameworks */,
 				F9664B371E5560FB00189300 /* CoreData.framework in Frameworks */,
 				F97ECECE1E2F811A0089038F /* CoreLocation.framework in Frameworks */,
 			);
@@ -95,6 +103,7 @@
 		F927955D1E1F6A8F00C7B0EA /* ATTAnalytics */ = {
 			isa = PBXGroup;
 			children = (
+				F91A30D01E8554B800FCF7BB /* ATTReachability.swift */,
 				F9664B1D1E5560DA00189300 /* ATTCoreDataManager.swift */,
 				F9664B1E1E5560DA00189300 /* ATTCustomEvent.swift */,
 				F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */,
@@ -119,6 +128,8 @@
 		F97ECECC1E2F811A0089038F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				F91A30D41E8554CE00FCF7BB /* CoreTelephony.framework */,
+				F91A30D21E8554C800FCF7BB /* SystemConfiguration.framework */,
 				F9664B361E5560FB00189300 /* CoreData.framework */,
 				F97ECECD1E2F811A0089038F /* CoreLocation.framework */,
 			);
@@ -252,6 +263,7 @@
 				F9664B2A1E5560DA00189300 /* ATTCoreDataManager.swift in Sources */,
 				F9664B2C1E5560DA00189300 /* ATTDB.xcdatamodeld in Sources */,
 				F9664B2F1E5560DA00189300 /* ATTLocationManager.swift in Sources */,
+				F91A30D11E8554B800FCF7BB /* ATTReachability.swift in Sources */,
 				F927956C1E1F6AB500C7B0EA /* ATTConfigParser.swift in Sources */,
 				F9664B2E1E5560DA00189300 /* ATTFlushManager.swift in Sources */,
 				F9664B351E5560DA00189300 /* ContainerResponse.swift in Sources */,

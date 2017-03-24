@@ -15,6 +15,11 @@ protocol ATTFlushManagerDelegate{
 
 class ATTFlushManager: NSObject {
     var delegate:ATTFlushManagerDelegate?
+    var encodedSessionString:String?
+    var sessionSyncCompleted:Bool?
+    var handShakeCompleted:Bool?
+    var identificationRequired:Bool?
+    var identificationStatusUpdated:Bool?
     
     // MARK: - deinit
     deinit {
@@ -24,16 +29,56 @@ class ATTFlushManager: NSObject {
     // MARK: - inits
     override init() {
         super.init()
+        
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(ATTFlushManager.identificationStatusChanged),
+                                               name: NSNotification.Name(rawValue: ATTAnalytics.IdentifyNotification),
+                                               object: nil)
+        
     }
     
     convenience init(flushInterval:Double?, delegate:ATTFlushManagerDelegate?) {
         self.init()
         self.delegate = delegate
-        Timer.scheduledTimer(timeInterval:15,
+        Timer.scheduledTimer(timeInterval:flushInterval!,
                              target:self,
                              selector:#selector(ATTFlushManager.flushDataInInterval),
                              userInfo:nil,
                              repeats:true)
+    }
+    
+    // MARK: - Identification
+    func resetIdentification() -> Void {
+        self.identificationRequired = true
+    }
+    
+    // MARK: - Session management
+    func createSession() -> Void {
+        self.handShakeCompleted = false
+        let deviceId = UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: "") as String
+        let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)"
+        let appID = ATTAnalytics.helper.appID!
+        let sessionID = "\(deviceId)-\(appID)-\(timeStamp)"
+        self.encodedSessionString = self.base64Encoded(string: sessionID)!
+        self.syncNewSession()
+    }
+    
+    func base64Encoded(string:String?) -> String? {
+        if let data = string?.data(using: .utf8) {
+            return data.base64EncodedString()
+        }
+        
+        return nil
+    }
+    
+    func identificationStatusChanged() -> Void {
+        self.identificationStatusUpdated = true
+    }
+    
+    // MARK: - Handshake
+    func syncNewSession() -> Void {
+        self.sessionSyncCompleted = false
+        self.flushDataInInterval()
     }
     
     // MARK: - End point of Syncing
@@ -43,20 +88,37 @@ class ATTFlushManager: NSObject {
         if flushableData != nil {
             let schema = self.formattedSchemaFromArray(eventsArray: flushableData)
             if schema != nil {
-                let requestPath = "saveAnalyticData"
+                // API endpoit
+                let requestPath = "save"
                 let request = ContainerRequest(requestURL:requestPath,
                                                requestParams:schema as Dictionary<String, AnyObject>?,
                                                requestPriority: .Normal)
                 Container.container.post(containerRequest: request, onCompletion: { (response) in
                     let responseDict = response?.responseDictionary
                     if responseDict != nil {
-                        let syncedKeysArray = responseDict?["syncedObjects"] as? Array<AnyObject>
+                        let syncedKeysArray = responseDict?["events"] as? Array<AnyObject>
+                        let identificationObject = responseDict?["identification"] as? Dictionary<String, AnyObject>
+                        let identificationStatus = identificationObject?["identificationStatus"] as? Bool
+                        let sessionObject = responseDict?["session"] as? Dictionary<String, AnyObject>
+                        let sessionStatus = sessionObject?["sessionCreationStatus"] as? Bool
                         var screenViewIDArray = Array<String>()
+                        
                         for eachKeyDict in syncedKeysArray! {
-                            screenViewIDArray.append(eachKeyDict["screenViewID"] as! String)
+                            screenViewIDArray.append(eachKeyDict["eventId"] as! String)
                         }
                         
                         self.delegate?.removedSyncedObjects(screenIDArray: screenViewIDArray)
+                        
+                        if identificationStatus == true {
+                            self.identificationRequired = false
+                            self.identificationStatusUpdated = false
+                        }
+                        
+                        if sessionStatus == true {
+                            self.handShakeCompleted = true
+                        }
+                        
+                        self.sessionSyncCompleted = true
                     }
                 })
             }
@@ -65,18 +127,23 @@ class ATTFlushManager: NSObject {
     
     // MARK: - Formatting the schema
     func formattedSchemaFromArray(eventsArray:Array<AnyObject>?) -> Dictionary<String, AnyObject>? {
-        var resultArray = Array<AnyObject>()
+        if self.sessionSyncCompleted == false {
+            return self.syncableSessionObject() as Dictionary<String, AnyObject>?
+        }
+        
+        var screenViews = Array<AnyObject>()
+        var screenEvents = Array<AnyObject>()
         if (eventsArray?.count)! > 0 {
             for screenViewIndex in 0...(eventsArray?.count)! - 1 {
                 let eachScreen:ATTScreenViewModel = eventsArray![screenViewIndex] as! ATTScreenViewModel
-                var screenEvents = Array<AnyObject>()
+                let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
                 if eachScreen.screenEventsArray != nil && (eachScreen.screenEventsArray?.count)! > 0 {
                     for eventsIndex in 0...(eachScreen.screenEventsArray?.count)! - 1 {
                         let eachEvent:ATTEventModel = eachScreen.screenEventsArray?[eventsIndex] as! ATTEventModel
                         
                         let eType = (eachEvent.eventType != nil) ? eachEvent.eventType : ""
                         let eName = (eachEvent.eventName != nil) ? eachEvent.eventName : ""
-                        let dURL = (eachEvent.dataURL != nil) ? eachEvent.dataURL : ""
+                        //let dURL = (eachEvent.dataURL != nil) ? eachEvent.dataURL : ""
                         let eStrtTim = (eachEvent.eventStartTime != nil) ? eachEvent.eventStartTime : Date()
                         let eStrtTimFormated = (eStrtTim?.timeIntervalSince1970)! * 1000
                         let eDur = (eachEvent.eventDuration != nil) ? eachEvent.eventDuration : 0
@@ -85,10 +152,12 @@ class ATTFlushManager: NSObject {
                         let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
                         let customParam = (eachEvent.arguments != nil) ? eachEvent.arguments : Dictionary<String, AnyObject>()
                         
-                        let eventDictionary = ["eventType":(eType as AnyObject?)!,
-                                               "dataURL":(dURL as AnyObject?)!,
-                                               "eventName":(eName as AnyObject?)!,
-                                               "eventStartTime":("\(eStrtTimFormated)" as AnyObject?)!,
+                        let eventDictionary = ["sessionId":self.encodedSessionString as AnyObject,
+                                               "eventType":(eType as AnyObject?)!,
+                                               "userId":currentUserID()! as AnyObject,
+                                               "event":(eName as AnyObject?)!,
+                                               "eventId":(sID as AnyObject?)!,
+                                               "timestamp":("\(eStrtTimFormated)" as AnyObject?)!,
                                                "eventDuration":("\(eDur!)" as AnyObject?)!,
                                                "location":location as AnyObject,
                                                "customParam":customParam as AnyObject] as [String : AnyObject]
@@ -97,7 +166,7 @@ class ATTFlushManager: NSObject {
                     }
                 }
                 
-                let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
+                //let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
                 let sName = (eachScreen.screenName != nil) ? eachScreen.screenName : ""
                 let sPName = (eachScreen.previousScreenName != nil) ? eachScreen.previousScreenName : ""
                 let sBTime = (eachScreen.screenViewBeginTime != nil) ? eachScreen.screenViewBeginTime : Date()
@@ -107,28 +176,71 @@ class ATTFlushManager: NSObject {
                 let log = (eachScreen.longitude != nil) ? eachScreen.longitude : 0
                 let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
                 
-                let screenViewDictionary:Dictionary<String, AnyObject> = ["screenViewID":(sID as AnyObject?)!,
-                                                                          "presentScreen":(sName as AnyObject?)!,
+                let screenViewDictionary:Dictionary<String, AnyObject> = ["sessionId":self.encodedSessionString as AnyObject,
+                                                                          "eventId":(sID as AnyObject?)!,
+                                                                          "userId":currentUserID()! as AnyObject,
+                                                                          "eventType":"ScreenView" as AnyObject,
+                                                                          "event":"ScreenView" as AnyObject,
+                                                                          "sourceName":(sName as AnyObject?)!,
                                                                           "previousScreen":(sPName as AnyObject?)!,
-                                                                          "screenWatchedTime":("\(sBTimeFormted)" as AnyObject?)!,
-                                                                          "screenWatchDuration":("\(sVDur!)" as AnyObject?)!,
-                                                                          "onScreenActions":screenEvents as AnyObject,
+                                                                          "timestamp":("\(sBTimeFormted)" as AnyObject?)!,
+                                                                          "timeSpent":("\(sVDur!)" as AnyObject?)!,
                                                                           "location":location as AnyObject]
                 
-                resultArray.append(screenViewDictionary as AnyObject)
+                screenViews.append(screenViewDictionary as AnyObject)
             }
             
-            let baseInfo = ["libInfo":self.libInfo() as AnyObject,
-                            "appInfo":self.appInfo() as AnyObject,
-                            "deviceInfo":self.deviceInfo() as AnyObject]
+            var eventsArray = Array<AnyObject>()
+            if self.identificationStatusUpdated == true {
+                eventsArray.append(self.identificationObject() as AnyObject)
+            }
             
-            let schema = ["baseInfo":baseInfo as AnyObject,
-                          "screenViews":resultArray] as [String : Any]
+            eventsArray = (eventsArray + screenViews + screenEvents) as Array<AnyObject>
+            let data = ["appId": ATTAnalytics.helper.appID! as AnyObject,
+                        "events":eventsArray as AnyObject] as [String : AnyObject]
             
-            return schema as Dictionary<String, AnyObject>?
+            return data as Dictionary<String, AnyObject>?
         }
        
         return nil
+    }
+    
+    func syncableSessionObject() -> Dictionary<String, AnyObject>? {
+        var eventsArray = Array<AnyObject>()
+        if self.handShakeCompleted == false {
+            eventsArray.append(self.sessionInfo() as AnyObject)
+        }
+        
+        if self.identificationRequired == true {
+            eventsArray.append(self.identificationObject() as AnyObject)
+        }
+        
+        let data = ["appId": ATTAnalytics.helper.appID! as AnyObject,
+                    "events":eventsArray as AnyObject] as [String : AnyObject]
+        
+        return data as Dictionary<String, AnyObject>?
+    }
+    
+    private func identificationObject() -> Dictionary<String, AnyObject>? {
+        var identificationDictionary = [String: AnyObject]()
+        
+        identificationDictionary["eventType"] = "Identify" as AnyObject?
+        identificationDictionary["event"] = "Identify" as AnyObject?
+        identificationDictionary["sessionId"] = self.encodedSessionString as AnyObject
+        identificationDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)" as AnyObject
+        identificationDictionary["userId"] = self.currentUserID() as AnyObject
+        
+        let userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
+        if userProfile != nil {
+            identificationDictionary["user"] = userProfile as AnyObject?
+        }
+        
+        identificationDictionary["device"] = self.deviceInfo() as AnyObject
+        identificationDictionary["network"] = self.networkInfo() as AnyObject
+        identificationDictionary["app"] = self.appInfo() as AnyObject
+        identificationDictionary["lib"] = self.libInfo() as AnyObject
+        
+        return identificationDictionary
     }
     
     private func appInfo() -> Dictionary<String, AnyObject>? {
@@ -139,11 +251,25 @@ class ATTFlushManager: NSObject {
         
         var appInfoDictionary = [String: AnyObject]()
         
-        appInfoDictionary["bundleVersion"] = version as AnyObject?
-        appInfoDictionary["bundleID"] = bundleID as AnyObject?
-        appInfoDictionary["bundleName"] = appName as AnyObject?
+        appInfoDictionary["version"] = version as AnyObject?
+        appInfoDictionary["nameSpace"] = bundleID as AnyObject?
+        appInfoDictionary["name"] = appName as AnyObject?
+        appInfoDictionary["language"] = "" as AnyObject?
+        appInfoDictionary["build"] = "" as AnyObject?
         
         return appInfoDictionary
+    }
+    
+    private func sessionInfo() -> Dictionary<String, AnyObject>? {
+        var sessionInfoDictionary = [String: AnyObject]()
+        
+        sessionInfoDictionary["sessionId"] = self.encodedSessionString as AnyObject?
+        sessionInfoDictionary["userId"] = self.currentUserID() as AnyObject?
+        sessionInfoDictionary["event"] = "SessionStart" as AnyObject?
+        sessionInfoDictionary["eventType"] = "SessionStart" as AnyObject?
+        sessionInfoDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)" as AnyObject?
+        
+        return sessionInfoDictionary
     }
     
     private func libInfo() -> Dictionary<String, String>? {
@@ -153,10 +279,55 @@ class ATTFlushManager: NSObject {
     private func deviceInfo() -> Dictionary<String, AnyObject>? {
         var appInfoDictionary = [String: AnyObject]()
         
-        appInfoDictionary["deviceID"] = UIDevice.current.identifierForVendor!.uuidString as AnyObject?
-        appInfoDictionary["platform"] = "iOS" as AnyObject?
+        appInfoDictionary["id"] = UIDevice.current.identifierForVendor!.uuidString as AnyObject?
+        appInfoDictionary["os"] = "iOS" as AnyObject?
         appInfoDictionary["version"] = UIDevice.current.systemVersion as AnyObject?
+        appInfoDictionary["manufacture"] = "Apple" as AnyObject?
+        appInfoDictionary["model"] = UIDevice.current.model as AnyObject?
+        appInfoDictionary["name"] = UIDevice.current.name as AnyObject?
+        appInfoDictionary["locale"] = NSLocale.current.languageCode as AnyObject?
+        appInfoDictionary["resolution"] = "\(UIScreen.main.bounds.size.width) x \(UIScreen.main.bounds.size.height)" as AnyObject?
         
         return appInfoDictionary
     }
+    
+    private func userInfo() -> Dictionary<String, AnyObject>? {
+        var userInfoDictionary = [String: AnyObject]()
+        userInfoDictionary["userId"] = self.currentUserID() as AnyObject?
+        
+        let userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
+        if userProfile != nil {
+            userInfoDictionary["user"] = userProfile as AnyObject?
+        }
+        
+        return userInfoDictionary
+    }
+    
+    private func networkInfo() -> Dictionary<String, AnyObject>? {
+        var networkInfoDictionary = [String: AnyObject]()
+        
+        if ATTReachability.reachability.currentReachabilityStatus == .reachableViaWiFi {
+            networkInfoDictionary["type"] = "Wifi" as AnyObject?
+        } else {
+            networkInfoDictionary["type"] = "Cellular" as AnyObject?
+            networkInfoDictionary["carrier"] = ATTReachability.reachability.carrierName()! as AnyObject?
+        }
+        
+        networkInfoDictionary["connectionSpeed"] = "" as AnyObject?
+        
+        return networkInfoDictionary
+    }
+    
+    private func currentUserID() -> String? {
+        var userID = UserDefaults.standard.object(forKey: "ATTUserID") as? String
+        if userID == nil || userID == "" {
+            userID = "\(ATTMiddlewareSchemaManager.manager.newUniqueID()!)" as String?
+            userID = self.base64Encoded(string: userID)
+            UserDefaults.standard.setValue(userID, forKey: "ATTUserID")
+        }
+        
+        return userID
+    }
 }
+
+

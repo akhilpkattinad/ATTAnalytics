@@ -15,11 +15,14 @@ public class ATTAnalytics: NSObject {
     // MARK: Pubclic Constants
     public static let TrackingNotification = "RegisterForTrakingNotification"
     public static let CrashTrackingNotification = "RegisterForCrashTrakingNotification"
+    public static let IdentifyNotification = "IndentifyUser"
     
     // For Objective - C support since the converted framework not supporting swift enums
     public static let TrackingTypeAuto = "Auto"
     public static let TrackingTypeManual = "Manual"
     
+    public var appID:String?
+
     // MARK: Enums
     public enum TrackingTypes {
         case Automatic
@@ -34,7 +37,7 @@ public class ATTAnalytics: NSObject {
     
     private static let crashLogFileName = "ATTCrashLog.log"
     
-    private var configParser:ATTConfigParser?    
+    private var configParser:ATTConfigParser?
     
     private var configurationFilePath:String?
     private var presentViewControllerName:String?
@@ -76,14 +79,18 @@ public class ATTAnalytics: NSObject {
     
     // MARK: - Public Methods
     // Method with Local resource path
-    public func beginTracking(pathForConfigFile:String?) -> Void {
-        self.beginTracking(pathForConfigFile:pathForConfigFile, stateTrackingType:.Manual, actionTrackingType:.Manual)
+    public func beginTracking(appID:String?, pathForConfigFile:String?) -> Void {
+        self.beginTracking(appID:appID,
+                           pathForConfigFile:pathForConfigFile,
+                           stateTrackingType:.Manual,
+                           actionTrackingType:.Manual)
     }
     
-    public func beginTracking(pathForConfigFile:String?,
+    public func beginTracking(appID:String?,
+                              pathForConfigFile:String?,
                               stateTrackingType stateType:TrackingTypes?,
                               actionTrackingType methodType:TrackingTypes?) -> Void {
-        
+        self.appID = appID
         self.configurationFilePath = pathForConfigFile
         self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
         self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
@@ -91,14 +98,15 @@ public class ATTAnalytics: NSObject {
     }
 
     // Method with configurations as Dictionary
-    public func beginTracking(configuration:Dictionary<String, AnyObject>?) -> Void {
-        self.beginTracking(configuration:configuration, stateTrackingType:.Manual, actionTrackingType:.Manual)
+    public func beginTracking(appID:String?, configuration:Dictionary<String, AnyObject>?) -> Void {
+        self.beginTracking(appID:appID, configuration:configuration, stateTrackingType:.Manual, actionTrackingType:.Manual)
     }
     
-    public func beginTracking(configuration:Dictionary<String, AnyObject>?,
+    public func beginTracking(appID:String?,
+                              configuration:Dictionary<String, AnyObject>?,
                               stateTrackingType stateType:TrackingTypes?,
                               actionTrackingType methodType:TrackingTypes?) -> Void {
-        
+        self.appID = appID
         self.createConfigParser(configurations:configuration)
         self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
         self.setupMiddlewareManager()
@@ -106,20 +114,22 @@ public class ATTAnalytics: NSObject {
     
     // Support of Objective - C
     // Swift project not required the below function calls
-    public func beginTracking(pathForConfigFile:String?,
+    public func beginTracking(appID:String?,
+                              pathForConfigFile:String?,
                               stateTrackingType stateType:String?,
                               actionTrackingType methodType:String?) -> Void {
-        
+        self.appID = appID
         self.configurationFilePath = pathForConfigFile
         self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
         self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
         self.setupMiddlewareManager()
     }
     
-    public func beginTracking(configuration:Dictionary<String, AnyObject>?,
+    public func beginTracking(appID:String?,
+                              configuration:Dictionary<String, AnyObject>?,
                               stateTrackingType stateType:String?,
                               actionTrackingType methodType:String?) -> Void {
-        
+        self.appID = appID
         self.createConfigParser(configurations:configuration)
         self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
         self.setupMiddlewareManager()
@@ -128,7 +138,6 @@ public class ATTAnalytics: NSObject {
     /// Can be called manually for Manual event tracking
     /// **customArguments** is used when an object requires to trigger event with dynamic values
     public func registerForTracking(appSpecificKeyword keyword:String?,
-                                    dataURL url:String?,
                                     customArguments arguments:Dictionary<String, AnyObject>?,
                                     customEvent event:ATTCustomEvent?) -> Void {
         
@@ -156,7 +165,6 @@ public class ATTAnalytics: NSObject {
         
         ATTMiddlewareSchemaManager.manager.createCustomEvent(eventName: keyword,
                                                              eventStartTime: Date(),
-                                                             dataURL: url,
                                                              customArguments: eventArguments,
                                                              eventDuration: duration)
     }
@@ -178,6 +186,22 @@ public class ATTAnalytics: NSObject {
             }
         }
     }
+    
+    // MARK: - User info
+    public func identifyUser(userID userId:String,
+                             userProfile profile:Dictionary<String, AnyObject>?) -> Void {
+        
+        UserDefaults.standard.setValue(userId, forKey: "ATTUserID")
+        UserDefaults.standard.setValue(profile, forKey: "ATTUserProfile")
+        NotificationCenter.default.post(name:NSNotification.Name(rawValue:ATTAnalytics.IdentifyNotification),
+                                        object:nil)
+    }
+
+    public func resetUser() -> Void {
+        UserDefaults.standard.setValue("", forKey: "ATTUserID")
+        UserDefaults.standard.setValue("", forKey: "ATTUserProfile")
+    }
+
     
     /////////////////////////////////////////////////////////////////////////////////////
     // MARK: - Private methods
@@ -414,7 +438,7 @@ public class ATTAnalytics: NSObject {
     }
     
     private func createNewScreenView(withClass aClass:AnyClass?) -> Void {
-        self.screenViewID = self.schemaManager.newScreenViewID()
+        self.screenViewID = self.schemaManager.newUniqueID()
         self.screenViewStart = self.currentLocalDate()
         
         ATTMiddlewareSchemaManager.manager.startNewScreenViewWithScreenID(screenViewID: self.screenViewID,
