@@ -152,15 +152,22 @@ class ATTFlushManager: NSObject {
                         let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
                         let customParam = (eachEvent.arguments != nil) ? eachEvent.arguments : Dictionary<String, AnyObject>()
                         
+                        var dataDictionary = [String: AnyObject]()
+                        
+                        dataDictionary["eventDuration"] = ("\(eDur!)" as AnyObject?)!
+                        dataDictionary["location"] = location as AnyObject
+                        
+                        for key in (customParam?.keys)! {
+                            dataDictionary[key] = customParam?[key]
+                        }
+                        
                         let eventDictionary = ["sessionId":self.encodedSessionString as AnyObject,
                                                "eventType":(eType as AnyObject?)!,
                                                "userId":currentUserID()! as AnyObject,
                                                "event":(eName as AnyObject?)!,
                                                "eventId":(sID as AnyObject?)!,
                                                "timestamp":("\(eStrtTimFormated)" as AnyObject?)!,
-                                               "eventDuration":("\(eDur!)" as AnyObject?)!,
-                                               "location":location as AnyObject,
-                                               "customParam":customParam as AnyObject] as [String : AnyObject]
+                                               "data":dataDictionary as AnyObject] as [String : AnyObject]
                         
                         screenEvents.append(eventDictionary as AnyObject)
                     }
@@ -176,16 +183,20 @@ class ATTFlushManager: NSObject {
                 let log = (eachScreen.longitude != nil) ? eachScreen.longitude : 0
                 let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
                 
+                var dataDictionary = [String: AnyObject]()
+                
+                dataDictionary["sourceName"] = (sName as AnyObject?)!
+                dataDictionary["previousScreen"] = (sPName as AnyObject?)!
+                dataDictionary["timeSpent"] = ("\(sVDur!)" as AnyObject?)!
+                dataDictionary["location"] = location as AnyObject
+                
                 let screenViewDictionary:Dictionary<String, AnyObject> = ["sessionId":self.encodedSessionString as AnyObject,
                                                                           "eventId":(sID as AnyObject?)!,
                                                                           "userId":currentUserID()! as AnyObject,
                                                                           "eventType":"ScreenView" as AnyObject,
                                                                           "event":"ScreenView" as AnyObject,
-                                                                          "sourceName":(sName as AnyObject?)!,
-                                                                          "previousScreen":(sPName as AnyObject?)!,
                                                                           "timestamp":("\(sBTimeFormted)" as AnyObject?)!,
-                                                                          "timeSpent":("\(sVDur!)" as AnyObject?)!,
-                                                                          "location":location as AnyObject]
+                                                                          "data":dataDictionary as AnyObject]
                 
                 screenViews.append(screenViewDictionary as AnyObject)
             }
@@ -230,15 +241,20 @@ class ATTFlushManager: NSObject {
         identificationDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)" as AnyObject
         identificationDictionary["userId"] = self.currentUserID() as AnyObject
         
+        var dataDictionary = [String: AnyObject]()
+        
+        
         let userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
         if userProfile != nil {
-            identificationDictionary["user"] = userProfile as AnyObject?
+            dataDictionary["user"] = userProfile as AnyObject?
         }
         
-        identificationDictionary["device"] = self.deviceInfo() as AnyObject
-        identificationDictionary["network"] = self.networkInfo() as AnyObject
-        identificationDictionary["app"] = self.appInfo() as AnyObject
-        identificationDictionary["lib"] = self.libInfo() as AnyObject
+        dataDictionary["device"] = self.deviceInfo() as AnyObject
+        dataDictionary["network"] = self.networkInfo() as AnyObject
+        dataDictionary["app"] = self.appInfo() as AnyObject
+        dataDictionary["lib"] = self.libInfo() as AnyObject
+        
+        identificationDictionary["data"] = dataDictionary as AnyObject
         
         return identificationDictionary
     }
@@ -273,7 +289,7 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> Dictionary<String, String>? {
-        return ["libVersion":"0.0.4"]
+        return ["libVersion":"0.0.1"]
     }
     
     private func deviceInfo() -> Dictionary<String, AnyObject>? {
