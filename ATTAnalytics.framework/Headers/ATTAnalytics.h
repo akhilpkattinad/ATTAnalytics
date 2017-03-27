@@ -6,6 +6,8 @@
 //  Copyright © 2017 Sreekanth R. All rights reserved.
 //
 
+/// Current version 0.0.4
+
 #import <UIKit/UIKit.h>
 
 //! Project version number for ATTAnalytics.

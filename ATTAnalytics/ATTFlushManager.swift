@@ -273,13 +273,13 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> Dictionary<String, String>? {
-        return ["libVersion":"0.0.1"]
+        return ["libVersion":"0.0.4"]
     }
     
     private func deviceInfo() -> Dictionary<String, AnyObject>? {
         var appInfoDictionary = [String: AnyObject]()
         
-        appInfoDictionary["id"] = UIDevice.current.identifierForVendor!.uuidString as AnyObject?
+        appInfoDictionary["deviceId"] = UIDevice.current.identifierForVendor!.uuidString as AnyObject?
         appInfoDictionary["os"] = "iOS" as AnyObject?
         appInfoDictionary["version"] = UIDevice.current.systemVersion as AnyObject?
         appInfoDictionary["manufacture"] = "Apple" as AnyObject?
