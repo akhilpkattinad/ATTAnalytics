@@ -156,6 +156,8 @@ class ATTFlushManager: NSObject {
                         
                         dataDictionary["eventDuration"] = ("\(eDur!)" as AnyObject?)!
                         dataDictionary["location"] = location as AnyObject
+                        dataDictionary["device"] = self.deviceInfo() as AnyObject
+                        dataDictionary["network"] = self.networkInfo() as AnyObject
                         
                         for key in (customParam?.keys)! {
                             dataDictionary[key] = customParam?[key]
@@ -189,6 +191,8 @@ class ATTFlushManager: NSObject {
                 dataDictionary["previousScreen"] = (sPName as AnyObject?)!
                 dataDictionary["timeSpent"] = ("\(sVDur!)" as AnyObject?)!
                 dataDictionary["location"] = location as AnyObject
+                dataDictionary["device"] = self.deviceInfo() as AnyObject
+                dataDictionary["network"] = self.networkInfo() as AnyObject
                 
                 let screenViewDictionary:Dictionary<String, AnyObject> = ["sessionId":self.encodedSessionString as AnyObject,
                                                                           "eventId":(sID as AnyObject?)!,
