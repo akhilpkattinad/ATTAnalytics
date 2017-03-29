@@ -149,6 +149,23 @@ class ATTFlushManager: NSObject {
             for screenViewIndex in 0...(eventsArray?.count)! - 1 {
                 let eachScreen:ATTScreenViewModel = eventsArray![screenViewIndex] as! ATTScreenViewModel
                 let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
+                
+                let sName = (eachScreen.screenName != nil) ? eachScreen.screenName : ""
+                let sTitle = (eachScreen.screenTitle != nil) ? eachScreen.screenTitle : ""
+                let sPName = (eachScreen.previousScreenName != nil) ? eachScreen.previousScreenName : ""
+                let sPTitle = (eachScreen.previousScreenTitle != nil) ? eachScreen.previousScreenTitle : ""
+                
+                var dataDictionary = [String: AnyObject]()
+                var sourceName = sName
+                if sTitle != nil && sTitle != "" {
+                    sourceName = sTitle
+                }
+                
+                var previousScreen = sPName
+                if sPTitle != nil && sPTitle != "" {
+                    previousScreen = sPTitle
+                }
+                
                 if eachScreen.screenEventsArray != nil && (eachScreen.screenEventsArray?.count)! > 0 {
                     for eventsIndex in 0...(eachScreen.screenEventsArray?.count)! - 1 {
                         let eachEvent:ATTEventModel = eachScreen.screenEventsArray?[eventsIndex] as! ATTEventModel
@@ -170,6 +187,8 @@ class ATTFlushManager: NSObject {
                         dataDictionary["location"] = location as AnyObject
                         dataDictionary["device"] = self.deviceInfo() as AnyObject
                         dataDictionary["network"] = self.networkInfo() as AnyObject
+                        dataDictionary["sourceName"] = (sourceName as AnyObject?)!
+                        dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
                         
                         for key in (customParam?.keys)! {
                             dataDictionary[key] = customParam?[key]
@@ -188,27 +207,13 @@ class ATTFlushManager: NSObject {
                 }
                 
                 //let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
-                let sName = (eachScreen.screenName != nil) ? eachScreen.screenName : ""
-                let sTitle = (eachScreen.screenTitle != nil) ? eachScreen.screenTitle : ""
-                let sPName = (eachScreen.previousScreenName != nil) ? eachScreen.previousScreenName : ""
-                let sPTitle = (eachScreen.previousScreenTitle != nil) ? eachScreen.previousScreenTitle : ""
+                
                 let sBTime = (eachScreen.screenViewBeginTime != nil) ? eachScreen.screenViewBeginTime : Date()
                 let sBTimeFormted = (sBTime?.timeIntervalSince1970)! * 1000
                 let sVDur = (eachScreen.screeViewDuration != nil) ? eachScreen.screeViewDuration : 0
                 let lat = (eachScreen.latitude != nil) ? eachScreen.latitude : 0
                 let log = (eachScreen.longitude != nil) ? eachScreen.longitude : 0
                 let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
-                
-                var dataDictionary = [String: AnyObject]()
-                var sourceName = sName
-                if sTitle != nil && sTitle != "" {
-                    sourceName = sTitle
-                }
-                
-                var previousScreen = sPName
-                if sPTitle != nil && sPTitle != "" {
-                    previousScreen = sPTitle
-                }
                 
                 dataDictionary["sourceName"] = (sourceName as AnyObject?)!
                 dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
