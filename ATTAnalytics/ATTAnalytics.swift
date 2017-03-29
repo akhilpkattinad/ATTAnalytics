@@ -16,6 +16,7 @@ public class ATTAnalytics: NSObject {
     public static let TrackingNotification = "RegisterForTrakingNotification"
     public static let CrashTrackingNotification = "RegisterForCrashTrakingNotification"
     public static let IdentifyNotification = "IndentifyUser"
+    public static let LoggoutNotification = "loggoutUser"
     
     // For Objective - C support since the converted framework not supporting swift enums
     public static let TrackingTypeAuto = "Auto"
@@ -42,6 +43,7 @@ public class ATTAnalytics: NSObject {
     private var configurationFilePath:String?
     private var presentViewControllerName:String?
     private var previousViewControllerName:String?
+    private var previousViewControllerTitle:String?
     private var screenViewID:String?
     private var stateChangeTrackingSelector:Selector?
     private var screenViewStart:Date?
@@ -200,6 +202,8 @@ public class ATTAnalytics: NSObject {
     public func resetUser() -> Void {
         UserDefaults.standard.setValue("", forKey: "ATTUserID")
         UserDefaults.standard.setValue("", forKey: "ATTUserProfile")
+        NotificationCenter.default.post(name:NSNotification.Name(rawValue:ATTAnalytics.LoggoutNotification),
+                                        object:nil)
     }
 
     
@@ -428,8 +432,9 @@ public class ATTAnalytics: NSObject {
         if let topViewController = viewController as? UIViewController {
             self.presentViewControllerName = "\(topViewController.classForCoder)"
             self.triggerEventForTheVisibleViewController(viewController:topViewController)
-            self.createNewScreenView(withClass: topViewController.classForCoder)
+            self.createNewScreenView(withClass: topViewController.classForCoder, screenTitle: topViewController.title)
             self.previousViewControllerName = self.presentViewControllerName
+            self.previousViewControllerTitle = topViewController.title
         }
     }
     
@@ -437,13 +442,15 @@ public class ATTAnalytics: NSObject {
         self.updatePreviousScreenActivityObject()
     }
     
-    private func createNewScreenView(withClass aClass:AnyClass?) -> Void {
+    private func createNewScreenView(withClass aClass:AnyClass?, screenTitle title:String?) -> Void {
         self.screenViewID = self.schemaManager.newUniqueID()
         self.screenViewStart = self.currentLocalDate()
         
         ATTMiddlewareSchemaManager.manager.startNewScreenViewWithScreenID(screenViewID: self.screenViewID,
                                                                           screenName: self.presentViewControllerName,
+                                                                          screenTitle: title,
                                                                           previousScreen:self.previousViewControllerName,
+                                                                          previousScreenTitle: self.previousViewControllerTitle,
                                                                           screenClass:aClass,
                                                                           screenViewBeginAt: self.screenViewStart)
     }

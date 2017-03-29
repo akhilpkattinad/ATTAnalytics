@@ -117,6 +117,7 @@ typedef unsigned int swift_uint4  __attribute__((__ext_vector_type__(4)));
 #if defined(__has_feature) && __has_feature(modules)
 @import ObjectiveC;
 @import CoreData;
+@import UIKit;
 #endif
 
 #pragma clang diagnostic ignored "-Wproperty-attribute-mismatch"
@@ -131,6 +132,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 + (NSString * _Nonnull)CrashTrackingNotification;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull IdentifyNotification;)
 + (NSString * _Nonnull)IdentifyNotification;
+SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull LoggoutNotification;)
++ (NSString * _Nonnull)LoggoutNotification;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull TrackingTypeAuto;)
 + (NSString * _Nonnull)TrackingTypeAuto;
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull TrackingTypeManual;)
@@ -203,10 +206,17 @@ SWIFT_CLASS_NAMED("Screen")
 @property (nonatomic) double longitude;
 @property (nonatomic, copy) NSString * _Nullable presentScreen;
 @property (nonatomic, copy) NSString * _Nullable previousScreen;
+@property (nonatomic, copy) NSString * _Nullable previousScreenTitle;
+@property (nonatomic, copy) NSString * _Nullable screenTitle;
 @property (nonatomic, copy) NSString * _Nullable screenViewID;
 @property (nonatomic) double screenWatchDuration;
 @property (nonatomic, strong) NSDate * _Nullable screenWatchedTime;
 @property (nonatomic) BOOL syncStatus;
+@end
+
+
+@interface UIDevice (SWIFT_EXTENSION(ATTAnalytics))
+@property (nonatomic, readonly, copy) NSString * _Nonnull modelType;
 @end
 
 #pragma clang diagnostic pop

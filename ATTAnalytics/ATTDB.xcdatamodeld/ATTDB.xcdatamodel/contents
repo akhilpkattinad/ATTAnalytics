@@ -16,6 +16,8 @@
         <attribute name="longitude" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="presentScreen" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="previousScreen" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="previousScreenTitle" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="screenTitle" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="screenViewID" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="screenWatchDuration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES" syncable="YES"/>
         <attribute name="screenWatchedTime" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
@@ -23,6 +25,6 @@
     </entity>
     <elements>
         <element name="Events" positionX="-63" positionY="27" width="128" height="180"/>
-        <element name="Screen" positionX="-63" positionY="-18" width="128" height="165"/>
+        <element name="Screen" positionX="-63" positionY="-18" width="128" height="195"/>
     </elements>
 </model>

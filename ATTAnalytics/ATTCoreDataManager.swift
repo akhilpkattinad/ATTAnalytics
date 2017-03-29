@@ -25,7 +25,7 @@ class ATTCoreDataManager: NSObject {
         let modelURL = Bundle.main.url(forResource: "ATTDB", withExtension: "momd")!
         return NSManagedObjectModel(contentsOf: modelURL)!
     }()
-    */
+ */
     // MARK: - PersistentStoreCoordinator for below ios 10 support
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR PRODUCTION PURPOSE ONLY - AFTER CONVERTING TO FRAMEWORK
@@ -123,7 +123,9 @@ class ATTCoreDataManager: NSObject {
             
             newScreen.setValue(screenViewModel?.screenViewID,         forKeyPath: "screenViewID")
             newScreen.setValue(screenViewModel?.previousScreenName,   forKeyPath: "previousScreen")
+            newScreen.setValue(screenViewModel?.previousScreenTitle,  forKeyPath: "previousScreenTitle")
             newScreen.setValue(screenViewModel?.screenName,           forKeyPath: "presentScreen")
+            newScreen.setValue(screenViewModel?.screenTitle,          forKeyPath: "screenTitle")
             newScreen.setValue(screenViewModel?.screeViewDuration,    forKeyPath: "screenWatchDuration")
             newScreen.setValue(screenViewModel?.screenViewBeginTime,  forKeyPath: "screenWatchedTime")
             newScreen.setValue(screenViewModel?.latitude,             forKeyPath: "latitude")

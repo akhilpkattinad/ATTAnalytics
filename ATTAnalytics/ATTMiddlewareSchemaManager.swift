@@ -20,8 +20,10 @@ class ATTMiddlewareSchemaManager: NSObject {
     var appInfo:Dictionary<String, AnyObject>?
     var appLaunched:Bool?
     var lastViewedScreen:String?
+    var lastViewedScreenTitle:String?
     var lastViewedScreenClass:AnyClass?
     var previousScreenName:String?
+    var previousScreenTitle:String?
     
     // MARK: Lazy initializations
     lazy var syncableSchemaArray: Array<AnyObject> = {
@@ -89,7 +91,9 @@ class ATTMiddlewareSchemaManager: NSObject {
         if self.appLaunched == false {
             self.startNewScreenViewWithScreenID(screenViewID: self.newUniqueID(),
                                                 screenName: self.lastViewedScreen,
+                                                screenTitle: self.lastViewedScreenTitle,
                                                 previousScreen:self.previousScreenName,
+                                                previousScreenTitle: self.previousScreenTitle,
                                                 screenClass: self.lastViewedScreenClass,
                                                 screenViewBeginAt: Date())
             self.appLaunched = false
@@ -104,16 +108,22 @@ class ATTMiddlewareSchemaManager: NSObject {
     // MARK: - Screen view events
     func startNewScreenViewWithScreenID(screenViewID:String?,
                                         screenName name:String?,
+                                        screenTitle title:String?,
                                         previousScreen previousScreenName:String?,
+                                        previousScreenTitle previousTitle:String?,
                                         screenClass aClass:AnyClass?,
                                         screenViewBeginAt screenViewBeginTime:Date?) -> Void {
         self.lastViewedScreen = name
+        self.lastViewedScreenTitle = title
         self.lastViewedScreenClass = aClass
         self.previousScreenName = previousScreenName
+        self.previousScreenTitle = previousTitle
         
         self.screenViewModel = ATTScreenViewModel(screenViewID:screenViewID,
                                                   screenName:name,
+                                                  screenTitle:title,
                                                   previousScreen:previousScreenName,
+                                                  previousScreenTitle:previousTitle,
                                                   screenViewBeginAt:screenViewBeginTime,
                                                   latitude:self.locationManager?.latitude,
                                                   longitude:self.locationManager?.longitude)
@@ -185,7 +195,9 @@ extension ATTMiddlewareSchemaManager:ATTFlushManagerDelegate {
             
             let screenModel = ATTScreenViewModel(screenViewID:eachScreen.value(forKeyPath: "screenViewID") as? String,
                                                  screenName:eachScreen.value(forKeyPath: "presentScreen") as? String,
+                                                 screenTitle:eachScreen.value(forKeyPath: "screenTitle") as? String,
                                                  previousScreen:eachScreen.value(forKeyPath: "previousScreen") as? String,
+                                                 previousScreenTitle:eachScreen.value(forKeyPath: "previousScreenTitle") as? String,
                                                  screenViewBeginAt:eachScreen.value(forKeyPath: "screenWatchedTime") as? Date,
                                                  latitude:eachScreen.value(forKeyPath: "latitude") as? Double,
                                                  longitude:eachScreen.value(forKeyPath: "longitude") as? Double)

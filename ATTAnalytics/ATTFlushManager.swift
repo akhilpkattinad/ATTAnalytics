@@ -35,6 +35,11 @@ class ATTFlushManager: NSObject {
                                                name: NSNotification.Name(rawValue: ATTAnalytics.IdentifyNotification),
                                                object: nil)
         
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(ATTFlushManager.userLoggedOut),
+                                               name: NSNotification.Name(rawValue: ATTAnalytics.LoggoutNotification),
+                                               object: nil)
+        
     }
     
     convenience init(flushInterval:Double?, delegate:ATTFlushManagerDelegate?) {
@@ -71,8 +76,15 @@ class ATTFlushManager: NSObject {
         return nil
     }
     
+    // MARK: Loggin and loggout
     func identificationStatusChanged() -> Void {
         self.identificationStatusUpdated = true
+        UserDefaults.standard.setValue("host", forKey: "ATTUserLoginType")
+    }
+    
+    func userLoggedOut() -> Void {
+        self.identificationStatusUpdated = true
+        UserDefaults.standard.setValue("guest", forKey: "ATTUserLoginType")
     }
     
     // MARK: - Handshake
@@ -177,7 +189,9 @@ class ATTFlushManager: NSObject {
                 
                 //let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
                 let sName = (eachScreen.screenName != nil) ? eachScreen.screenName : ""
+                let sTitle = (eachScreen.screenTitle != nil) ? eachScreen.screenTitle : ""
                 let sPName = (eachScreen.previousScreenName != nil) ? eachScreen.previousScreenName : ""
+                let sPTitle = (eachScreen.previousScreenTitle != nil) ? eachScreen.previousScreenTitle : ""
                 let sBTime = (eachScreen.screenViewBeginTime != nil) ? eachScreen.screenViewBeginTime : Date()
                 let sBTimeFormted = (sBTime?.timeIntervalSince1970)! * 1000
                 let sVDur = (eachScreen.screeViewDuration != nil) ? eachScreen.screeViewDuration : 0
@@ -186,9 +200,18 @@ class ATTFlushManager: NSObject {
                 let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
                 
                 var dataDictionary = [String: AnyObject]()
+                var sourceName = sName
+                if sTitle != nil && sTitle != "" {
+                    sourceName = sTitle
+                }
                 
-                dataDictionary["sourceName"] = (sName as AnyObject?)!
-                dataDictionary["previousScreen"] = (sPName as AnyObject?)!
+                var previousScreen = sPName
+                if sPTitle != nil && sPTitle != "" {
+                    previousScreen = sPTitle
+                }
+                
+                dataDictionary["sourceName"] = (sourceName as AnyObject?)!
+                dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
                 dataDictionary["timeSpent"] = ("\(sVDur!)" as AnyObject?)!
                 dataDictionary["location"] = location as AnyObject
                 dataDictionary["device"] = self.deviceInfo() as AnyObject
@@ -245,10 +268,20 @@ class ATTFlushManager: NSObject {
         identificationDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)" as AnyObject
         identificationDictionary["userId"] = self.currentUserID() as AnyObject
         
-        var dataDictionary = [String: AnyObject]()
+        var dataDictionary = [String: AnyObject]()        
         
+        var userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
+        let userType = UserDefaults.standard.object(forKey: "ATTUserLoginType") as? String
         
-        let userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
+        if userProfile == nil {
+            userProfile = [String: AnyObject]()
+        }
+        
+        userProfile?["userStatus"] = "0" as AnyObject?
+        
+        if userType != nil && userType == "host" {
+            userProfile?["userStatus"] = "1" as AnyObject?
+        }
         if userProfile != nil {
             dataDictionary["user"] = userProfile as AnyObject?
         }
@@ -301,6 +334,7 @@ class ATTFlushManager: NSObject {
         
         appInfoDictionary["deviceId"] = UIDevice.current.identifierForVendor!.uuidString as AnyObject?
         appInfoDictionary["os"] = "iOS" as AnyObject?
+        appInfoDictionary["type"] = UIDevice.current.modelType as AnyObject?
         appInfoDictionary["version"] = UIDevice.current.systemVersion as AnyObject?
         appInfoDictionary["manufacture"] = "Apple" as AnyObject?
         appInfoDictionary["model"] = UIDevice.current.model as AnyObject?
@@ -309,18 +343,6 @@ class ATTFlushManager: NSObject {
         appInfoDictionary["resolution"] = "\(UIScreen.main.bounds.size.width) x \(UIScreen.main.bounds.size.height)" as AnyObject?
         
         return appInfoDictionary
-    }
-    
-    private func userInfo() -> Dictionary<String, AnyObject>? {
-        var userInfoDictionary = [String: AnyObject]()
-        userInfoDictionary["userId"] = self.currentUserID() as AnyObject?
-        
-        let userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
-        if userProfile != nil {
-            userInfoDictionary["user"] = userProfile as AnyObject?
-        }
-        
-        return userInfoDictionary
     }
     
     private func networkInfo() -> Dictionary<String, AnyObject>? {
@@ -340,14 +362,37 @@ class ATTFlushManager: NSObject {
     
     private func currentUserID() -> String? {
         var userID = UserDefaults.standard.object(forKey: "ATTUserID") as? String
+        
         if userID == nil || userID == "" {
             userID = "\(ATTMiddlewareSchemaManager.manager.newUniqueID()!)" as String?
             userID = self.base64Encoded(string: userID)
             UserDefaults.standard.setValue(userID, forKey: "ATTUserID")
+            UserDefaults.standard.setValue("guest", forKey: "ATTUserLoginType")
         }
         
         return userID
     }
 }
 
-
+public extension UIDevice {
+    var modelType: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        
+        switch identifier {
+            case "iPod5,1", "iPod7,1","iPhone3,1", "iPhone3,2", "iPhone3,3", "iPhone4,1", "iPhone5,1", "iPhone5,2", "iPhone5,3", "iPhone6,1", "iPhone6,2", "iPhone7,2", "iPhone7,1", "iPhone8,1", "iPhone8,2","iPhone9,1", "iPhone9,3", "iPhone9,2", "iPhone9,4", "iPhone8,4":
+                
+                return "mobile"
+                
+            case "iPad2,1", "iPad2,2", "iPad2,3", "iPad2,4","iPad3,1", "iPad3,2", "iPad3,3", "iPad3,4", "iPad3,5", "iPad3,6", "iPad4,1", "iPad4,2", "iPad4,3", "iPad5,3", "iPad5,4", "iPad2,5", "iPad2,6", "iPad2,7","iPad4,4", "iPad4,5", "iPad4,6", "iPad4,7", "iPad4,8", "iPad4,9", "iPad5,1", "iPad5,2", "iPad6,3", "iPad6,4", "iPad6,7", "iPad6,8":return "tablet"
+            case "AppleTV5,3":                              return "tv"
+            case "i386", "x86_64":                          return "simulator"
+            default:                                        return identifier
+        }
+    }
+}
