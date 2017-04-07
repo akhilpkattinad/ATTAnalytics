@@ -12,7 +12,7 @@ class Container: NSObject {
     typealias completionHandler = (_ response:ContainerResponse?) -> Void
     
     // MARK: Private variables
-    var baseURL = "http://192.168.2.245:8080/Analytics/"
+    var baseURL = "http://111.93.108.38:8089/Analytics/"
     var completion:completionHandler?
     private var operationQueue:OperationQueue?
     private var timeStamp: String {
