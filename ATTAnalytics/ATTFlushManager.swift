@@ -21,6 +21,7 @@ class ATTFlushManager: NSObject {
     var identificationRequired:Bool?
     var identificationStatusUpdated:Bool?
     
+    
     // MARK: - deinit
     deinit {
         self.delegate = nil
