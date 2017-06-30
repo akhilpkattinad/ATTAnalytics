@@ -287,6 +287,7 @@ class ATTFlushManager: NSObject {
         if userType != nil && userType == "host" {
             userProfile?["userStatus"] = "1" as AnyObject?
         }
+        
         if userProfile != nil {
             dataDictionary["user"] = userProfile as AnyObject?
         }
@@ -357,7 +358,10 @@ class ATTFlushManager: NSObject {
             networkInfoDictionary["type"] = "Wifi" as AnyObject?
         } else {
             networkInfoDictionary["type"] = "Cellular" as AnyObject?
-            networkInfoDictionary["carrier"] = ATTReachability.reachability.carrierName()! as AnyObject?
+            if let carrierName = ATTReachability.reachability.carrierName() {
+                networkInfoDictionary["carrier"] = carrierName as AnyObject?
+
+            }
         }
         
         networkInfoDictionary["connectionSpeed"] = "" as AnyObject?
