@@ -360,6 +360,7 @@ class ATTFlushManager: NSObject {
         } else {
             networkInfoDictionary["type"] = "Cellular" as AnyObject?
             if let carrierName = ATTReachability.reachability.carrierName() {
+                print(carrierName)
                 networkInfoDictionary["carrier"] = carrierName as AnyObject?
 
             }
