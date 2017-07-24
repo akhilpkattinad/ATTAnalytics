@@ -29,7 +29,7 @@ class ContainerRequest: NSObject {
     
     // MARK: Properties
     var requestURL:String?
-    var requestParams:Dictionary<String, AnyObject>?
+    var requestParams:[String:Any]?
     
     var cachingPolicy:CachingTypes?
     var priority:RequestPriority?
@@ -48,7 +48,7 @@ class ContainerRequest: NSObject {
     }
     
     convenience init(requestURL:String?,
-                     requestParams:Dictionary<String, AnyObject>?,
+                     requestParams:[String:Any]?,
                      requestPriority:RequestPriority?) {
         self.init()
         

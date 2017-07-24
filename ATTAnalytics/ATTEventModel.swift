@@ -16,7 +16,7 @@ class ATTEventModel: NSObject {
     public var eventStartTime:Date?
     public var eventDuration:Double?
     public var dataURL:String?
-    public var arguments:Dictionary<String, AnyObject>?
+    public var arguments:[String:AnyObject]?
     public var latitude:CLLocationDegrees?
     public var longitude:CLLocationDegrees?
     
@@ -62,5 +62,6 @@ class ATTEventModel: NSObject {
         self.longitude = log
         self.dataURL = url
         self.arguments = arguments
+        
     }
 }

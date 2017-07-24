@@ -20,16 +20,14 @@ class ATTCoreDataManager: NSObject {
     
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR DEVELOPMENT PURPOSE ONLY - BEFORE CONVERTING TO FRAMEWORK
-    /*
     lazy var managedObjectModel: NSManagedObjectModel = {
         let modelURL = Bundle.main.url(forResource: "ATTDB", withExtension: "momd")!
         return NSManagedObjectModel(contentsOf: modelURL)!
     }()
- */
     // MARK: - PersistentStoreCoordinator for below ios 10 support
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR PRODUCTION PURPOSE ONLY - AFTER CONVERTING TO FRAMEWORK
-    
+    /*
     lazy var managedObjectModel: NSManagedObjectModel = {
         let bundlePath = Bundle.main.path(forResource: "ATTBackends", ofType: "bundle")
         let bundle = Bundle(path: bundlePath!)
@@ -37,7 +35,7 @@ class ATTCoreDataManager: NSObject {
         let modelURL = URL(fileURLWithPath: modelPath!)
         return NSManagedObjectModel(contentsOf: modelURL)!
     }()
-    
+    */
     
     lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel:self.managedObjectModel)
@@ -68,7 +66,6 @@ class ATTCoreDataManager: NSObject {
     // MARK: - Persistent container for above ios 10 support
     // ABOVE IOS 10
     /// THIS STACK IS ONLY BE USED FOR DEVELOPMENT PURPOSE BEFORE CONVERTING TO FRAMEWORK
-    /*
     @available(iOS 10.0, *)
     lazy var persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "ATTDB")
@@ -79,14 +76,14 @@ class ATTCoreDataManager: NSObject {
         })
         return container
     }()
-    */
+    
     
     /// WARNING!!!
     /////////// REPLACE THE ABOVE CODE WITH THE BELOW GIVEN CODE WHEN CONVERTING TO FRAMEWORK/////
     ///// CREATE A BUNDLE TARGET AND ADD THE .XCDATAMODELLD FILE AS COMPILE SOURCE//////
     ///// HOST PROJECT MUST INCLUDE THE .BUNDLE ALSO///////
  
-    
+    /*
     // MARK: - Core Data stack
     @available(iOS 10.0, *)
     lazy var persistentContainer: NSPersistentContainer = {
@@ -98,10 +95,10 @@ class ATTCoreDataManager: NSObject {
         })
         return container
     }()
+    */
     
-    
-    func currentContext() -> NSManagedObjectContext? {
-        var managedContext:AnyObject?
+    func currentContext() -> NSManagedObjectContext {
+        var managedContext:NSManagedObjectContext!
         if #available(iOS 10.0, *) {
             managedContext = self.persistentContainer.viewContext
             
@@ -110,14 +107,14 @@ class ATTCoreDataManager: NSObject {
             managedContext = self.managedObjectContext
         }
         
-        return managedContext as! NSManagedObjectContext?
+        return managedContext
     }
     
     // MARK: Screen view methods
     func createScreenView(screenViewModel:ATTScreenViewModel?) -> Void {
         if screenViewModel != nil {
             let entity = NSEntityDescription.entity(forEntityName: "Screen",
-                                                    in: self.currentContext()!)!
+                                                    in: self.currentContext())!
             
             let newScreen = NSManagedObject(entity: entity, insertInto: self.currentContext())
             
@@ -142,7 +139,7 @@ class ATTCoreDataManager: NSObject {
             fetchRequest.predicate = NSPredicate(format: "screenViewID = %@", (screenViewModel?.screenViewID)!)
             
             do {
-                let results = try self.currentContext()?.fetch(fetchRequest) as! Array<AnyObject>
+                let results = try self.currentContext().fetch(fetchRequest) as Array<AnyObject>
                 if (results.count) > 0 {
                     let managedObject = results[0]
                     managedObject.setValue(screenViewModel?.previousScreenName, forKey: "previousScreen")
@@ -155,24 +152,45 @@ class ATTCoreDataManager: NSObject {
             }
         }
     }
-    
-    func fetchAllScreens() -> Array<AnyObject>? {
-        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Screen")
+    func fetchAllEvents() -> Array<AnyObject>? {
+        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Events")
         do {
-            let data:Array<AnyObject> = try self.currentContext()!.fetch(fetchRequest)
+            let data:Array<AnyObject> = try self.currentContext().fetch(fetchRequest)
             return data
         } catch let error as NSError {
             print("Could not fetch. \(error), \(error.userInfo)")
             return nil
         }
     }
-    
+
+    func fetchAllScreens() -> Array<AnyObject>? {
+        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Screen")
+        do {
+            let data:Array<AnyObject> = try self.currentContext().fetch(fetchRequest)
+            return data
+        } catch let error as NSError {
+            print("Could not fetch. \(error), \(error.userInfo)")
+            return nil
+        }
+    }
+    func fetchScreenWithScreenID(screenID:String?) -> Array<AnyObject>? {
+        let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Screen")
+        fetchRequest.predicate = NSPredicate(format: "screenViewID = %@", screenID!)
+        do {
+            let data:Array<AnyObject> = try self.currentContext().fetch(fetchRequest)
+            return data
+        } catch let error as NSError {
+            print("Could not fetch. \(error), \(error.userInfo)")
+            return nil
+        }
+    }
+
     func createEvents(event:ATTEventModel?) -> Void {
         if event != nil {
             let entity = NSEntityDescription.entity(forEntityName: "Events",
-                                                    in: self.currentContext()!)!
+                                                    in: self.currentContext())!
             
-            let newEvent = NSManagedObject(entity: entity, insertInto: self.currentContext()!)
+            let newEvent = NSManagedObject(entity: entity, insertInto: self.currentContext())
             
             newEvent.setValue(event?.screenViewID,   forKeyPath: "screenViewID")
             newEvent.setValue(event?.eventType,      forKeyPath: "eventType")
@@ -199,7 +217,7 @@ class ATTCoreDataManager: NSObject {
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Events")
         fetchRequest.predicate = NSPredicate(format: "screenViewID = %@", screenID!)
         do {
-            let data:Array<AnyObject> = try self.currentContext()!.fetch(fetchRequest)
+            let data:Array<AnyObject> = try self.currentContext().fetch(fetchRequest)
             return data
         } catch let error as NSError {
             print("Could not fetch. \(error), \(error.userInfo)")
@@ -216,15 +234,42 @@ class ATTCoreDataManager: NSObject {
             self.saveContext()
         }
     }
-    
+    func deleteSyncableObjects(forEntity entityName:String) -> Void {
+        
+        let fetchRequest = NSFetchRequest<NSFetchRequestResult>(entityName: entityName)
+        if #available(iOS 9.0, *) {
+            let deleteRequest = NSBatchDeleteRequest(fetchRequest: fetchRequest)
+            do {
+                try persistentStoreCoordinator.execute(deleteRequest, with: self.currentContext())
+            } catch let error as NSError {
+                // TODO: handle the error
+                print("Could not save. \(error), \(error.userInfo)")
+
+            }
+            
+        } else {
+            do {
+                let results = try self.currentContext().fetch(fetchRequest) as Array<AnyObject>
+                if (results.count) > 0 {
+                    for eachScreen in results {
+                        self.currentContext().delete(eachScreen as! NSManagedObject)
+                    }
+                }
+            } catch let error as NSError {
+                print("Could not save. \(error), \(error.userInfo)")
+            }
+        }
+        
+    }
+
     func deleteSyncableObjects(screenID:String?, forEntity entityName:String?) -> Void {
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName!)
         fetchRequest.predicate = NSPredicate(format: "screenViewID = %@", screenID!)
         do {
-            let results = try self.currentContext()!.fetch(fetchRequest) as Array<AnyObject>
+            let results = try self.currentContext().fetch(fetchRequest) as Array<AnyObject>
             if (results.count) > 0 {
                 for eachScreen in results {
-                    self.currentContext()!.delete(eachScreen as! NSManagedObject)
+                    self.currentContext().delete(eachScreen as! NSManagedObject)
                 }
             }
         } catch let error as NSError {
@@ -234,7 +279,7 @@ class ATTCoreDataManager: NSObject {
     
     // MARK: - Core Data Saving support
     func saveContext () {
-        let context = self.currentContext()!
+        let context = self.currentContext()
         if context.hasChanges {
             do {
                 try context.save()

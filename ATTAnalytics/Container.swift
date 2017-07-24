@@ -12,7 +12,9 @@ class Container: NSObject {
     typealias completionHandler = (_ response:ContainerResponse?) -> Void
     
     // MARK: Private variables
-    var baseURL = "http://111.93.108.38:8089/Analytics/"
+    var baseURL      = "http://111.93.108.38:8089/Analytics/"
+    var debugBaseURL = "http://192.168.2.245:8080/Analytics/"
+    
     var completion:completionHandler?
     private var operationQueue:OperationQueue?
     private var timeStamp: String {
@@ -72,7 +74,7 @@ class Container: NSObject {
         urlRequest.httpMethod = self.stringConvertedRequestMethod(method:.Post)
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let data = try? JSONSerialization.data(withJSONObject: (containerRequest?.requestParams)!, options: [])        
+        let data = try? JSONSerialization.data(withJSONObject: (containerRequest?.requestParams)!, options: [])
         urlRequest.httpBody = data!
         let jsonString = NSString(data: data!, encoding: String.Encoding.utf8.rawValue)! as String
         print(" Syncable Data: \(jsonString)")
@@ -125,7 +127,9 @@ class Container: NSObject {
     }
     
     private func formulateRequestFromContainerRequest(containerRequest:ContainerRequest?) -> NSMutableURLRequest {
-        let theRequestURLString = baseURL.appending((containerRequest?.requestURL)!)
+        
+        let apiBaseURL = ATTAnalytics.helper.isDebug ? debugBaseURL : baseURL
+        let theRequestURLString = apiBaseURL.appending((containerRequest?.requestURL)!)
         let theRequestURL = URL(string: theRequestURLString)
         let urlRequest = NSMutableURLRequest(url: theRequestURL!)
         

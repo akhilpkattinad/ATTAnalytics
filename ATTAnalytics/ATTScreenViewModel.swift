@@ -21,6 +21,10 @@ class ATTScreenViewModel: NSObject {
     public var latitude:CLLocationDegrees?
     public var longitude:CLLocationDegrees?
     
+    //If its false dont pass screenview event
+    public var isNeedToPassScreenViewEvent:Bool = true
+
+    
     override init() {
         super.init()
     }

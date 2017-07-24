@@ -9,7 +9,7 @@
 import UIKit
 
 protocol ATTFlushManagerDelegate{
-    func flushData() -> Array<AnyObject>?
+    func flushData() -> [Any]
     func removedSyncedObjects(screenIDArray:Array<String>?) -> Void
 }
 
@@ -20,7 +20,6 @@ class ATTFlushManager: NSObject {
     var handShakeCompleted:Bool?
     var identificationRequired:Bool?
     var identificationStatusUpdated:Bool?
-    
     
     // MARK: - deinit
     deinit {
@@ -62,7 +61,7 @@ class ATTFlushManager: NSObject {
     func createSession() -> Void {
         self.handShakeCompleted = false
         let deviceId = UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: "") as String
-        let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)"
+        let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
         let appID = ATTAnalytics.helper.appID!
         let sessionID = "\(deviceId)-\(appID)-\(timeStamp)"
         self.encodedSessionString = self.base64Encoded(string: sessionID)!
@@ -96,282 +95,501 @@ class ATTFlushManager: NSObject {
     
     // MARK: - End point of Syncing
     // API calls and response handling
+    
     func flushDataInInterval() -> Void {
-        let flushableData = self.delegate?.flushData() as Array<AnyObject>?
-        if flushableData != nil {
-            let schema = self.formattedSchemaFromArray(eventsArray: flushableData)
-            if schema != nil {
-                // API endpoit
-                let requestPath = "save"
-                let request = ContainerRequest(requestURL:requestPath,
-                                               requestParams:schema as Dictionary<String, AnyObject>?,
-                                               requestPriority: .Normal)
-                Container.container.post(containerRequest: request, onCompletion: { (response) in
-                    let responseDict = response?.responseDictionary
-                    if responseDict != nil {
-                        let syncedKeysArray = responseDict?["events"] as? Array<AnyObject>
-                        let identificationObject = responseDict?["identification"] as? Dictionary<String, AnyObject>
-                        let identificationStatus = identificationObject?["identificationStatus"] as? Bool
-                        let sessionObject = responseDict?["session"] as? Dictionary<String, AnyObject>
-                        let sessionStatus = sessionObject?["sessionCreationStatus"] as? Bool
-                        var screenViewIDArray = Array<String>()
-                        
-                        for eachKeyDict in syncedKeysArray! {
-                            screenViewIDArray.append(eachKeyDict["eventId"] as! String)
-                        }
-                        
-                        self.delegate?.removedSyncedObjects(screenIDArray: screenViewIDArray)
-                        
-                        if identificationStatus == true {
-                            self.identificationRequired = false
-                            self.identificationStatusUpdated = false
-                        }
-                        
-                        if sessionStatus == true {
-                            self.handShakeCompleted = true
-                        }
-                        
-                        self.sessionSyncCompleted = true
-                    }
-                })
-            }
+        guard let flushableData = self.delegate?.flushData() as? [ATTScreenViewModel],let schema = self.formattedSchemaFromArray(flushableData)   else {
+            return
         }
+        // API endpoit
+        let requestPath = "save"
+        let request = ContainerRequest(requestURL:requestPath,
+                                       requestParams:schema,
+                                       requestPriority: .Normal)
+        
+        
+        Container.container.post(containerRequest: request, onCompletion: { (response) in
+            if  let responseDict = response?.responseDictionary {
+                if let syncedKeysArray = responseDict["events"] as? [AnyObject] {
+                    var screenViewIDArray: [String] = []
+                    for eachKeyDict in syncedKeysArray {
+                        if let eventIDString = eachKeyDict["eventId"] as? String {
+                            screenViewIDArray.append(eventIDString)
+                        }
+                    }
+                    screenViewIDArray.count > 0 ? self.delegate?.removedSyncedObjects(screenIDArray: screenViewIDArray) : nil
+                }
+                
+                if let identificationObject = responseDict["identification"] as? [String:AnyObject],let identificationStatus = identificationObject["identificationStatus"] as? Bool,identificationStatus == true {
+                    self.identificationRequired = false
+                    self.identificationStatusUpdated = false
+                }
+                
+                if let sessionObject = responseDict["session"] as? [String:AnyObject], let sessionStatus = sessionObject["sessionCreationStatus"] as? Bool, sessionStatus == true {
+                    self.handShakeCompleted = true
+                }
+                self.sessionSyncCompleted = true
+            }
+        })
+        
+        
     }
     
+    
+    /*
+     func flushDataInInterval() -> Void {
+     let flushableData = self.delegate?.flushData() as Array<AnyObject>?
+     if flushableData != nil {
+     let schema = self.formattedSchemaFromArray(eventsArray: flushableData)
+     if schema != nil {
+     // API endpoit
+     let requestPath = "save"
+     let request = ContainerRequest(requestURL:requestPath,
+     requestParams:schema as Dictionary<String, AnyObject>?,
+     requestPriority: .Normal)
+     Container.container.post(containerRequest: request, onCompletion: { (response) in
+     let responseDict = response?.responseDictionary
+     if responseDict != nil {
+     let syncedKeysArray = responseDict?["events"] as? Array<AnyObject>
+     let identificationObject = responseDict?["identification"] as? Dictionary<String, AnyObject>
+     let identificationStatus = identificationObject?["identificationStatus"] as? Bool
+     let sessionObject = responseDict?["session"] as? Dictionary<String, AnyObject>
+     let sessionStatus = sessionObject?["sessionCreationStatus"] as? Bool
+     var screenViewIDArray = Array<String>()
+     
+     for eachKeyDict in syncedKeysArray! {
+     screenViewIDArray.append(eachKeyDict["eventId"] as! String)
+     }
+     
+     self.delegate?.removedSyncedObjects(screenIDArray: screenViewIDArray)
+     
+     if identificationStatus == true {
+     self.identificationRequired = false
+     self.identificationStatusUpdated = false
+     }
+     
+     if sessionStatus == true {
+     self.handShakeCompleted = true
+     }
+     
+     self.sessionSyncCompleted = true
+     }
+     })
+     }
+     }
+     }
+     */
+    
+    
+    /*
+     func formattedSchemaFromArray(eventsArray:Array<AnyObject>?) -> Dictionary<String, AnyObject>? {
+     if self.sessionSyncCompleted == false {
+     return self.syncableSessionObject() as Dictionary<String, AnyObject>?
+     }
+     
+     var screenViews = Array<AnyObject>()
+     var screenEvents = Array<AnyObject>()
+     if (eventsArray?.count)! > 0 {
+     for screenViewIndex in 0...(eventsArray?.count)! - 1 {
+     let eachScreen:ATTScreenViewModel = eventsArray![screenViewIndex] as! ATTScreenViewModel
+     let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
+     
+     let sName = (eachScreen.screenName != nil) ? eachScreen.screenName : ""
+     let sTitle = (eachScreen.screenTitle != nil) ? eachScreen.screenTitle : ""
+     let sPName = (eachScreen.previousScreenName != nil) ? eachScreen.previousScreenName : ""
+     let sPTitle = (eachScreen.previousScreenTitle != nil) ? eachScreen.previousScreenTitle : ""
+     
+     var dataDictionary = [String: AnyObject]()
+     var sourceName = sName
+     if sTitle != nil && sTitle != "" {
+     sourceName = sTitle
+     }
+     
+     var previousScreen = sPName
+     if sPTitle != nil && sPTitle != "" {
+     previousScreen = sPTitle
+     }
+     
+     if eachScreen.screenEventsArray != nil && (eachScreen.screenEventsArray?.count)! > 0 {
+     for eventsIndex in 0...(eachScreen.screenEventsArray?.count)! - 1 {
+     let eachEvent:ATTEventModel = eachScreen.screenEventsArray?[eventsIndex] as! ATTEventModel
+     
+     let eType = (eachEvent.eventType != nil) ? eachEvent.eventType : ""
+     let eName = (eachEvent.eventName != nil) ? eachEvent.eventName : ""
+     //let dURL = (eachEvent.dataURL != nil) ? eachEvent.dataURL : ""
+     let eStrtTim = (eachEvent.eventStartTime != nil) ? eachEvent.eventStartTime : Date()
+     let eStrtTimFormated = (eStrtTim?.timeIntervalSince1970)! * 1000
+     let eDur = (eachEvent.eventDuration != nil) ? eachEvent.eventDuration : 0
+     let lat = (eachEvent.latitude != nil) ? eachEvent.latitude : 0
+     let log = (eachEvent.longitude != nil) ? eachEvent.longitude : 0
+     let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
+     let customParam = (eachEvent.arguments != nil) ? eachEvent.arguments : Dictionary<String, AnyObject>()
+     
+     var dataDictionary = [String: AnyObject]()
+     
+     dataDictionary["eventDuration"] = ("\(eDur!)" as AnyObject?)!
+     dataDictionary["location"] = location as AnyObject
+     dataDictionary["device"] = self.deviceInfo() as AnyObject
+     dataDictionary["network"] = self.networkInfo() as AnyObject
+     dataDictionary["sourceName"] = (sourceName as AnyObject?)!
+     dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
+     
+     for key in (customParam?.keys)! {
+     dataDictionary[key] = customParam?[key]
+     }
+     
+     let eventDictionary = ["sessionId":self.encodedSessionString as AnyObject,
+     "eventType":(eType as AnyObject?)!,
+     "userId":currentUserID() as AnyObject,
+     "event":(eName as AnyObject?)!,
+     "eventId":(sID as AnyObject?)!,
+     "timestamp":("\(eStrtTimFormated)" as AnyObject?)!,
+     "data":dataDictionary as AnyObject] as [String : AnyObject]
+     
+     screenEvents.append(eventDictionary as AnyObject)
+     }
+     }
+     
+     //let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
+     
+     let sBTime = (eachScreen.screenViewBeginTime != nil) ? eachScreen.screenViewBeginTime : Date()
+     let sBTimeFormted = (sBTime?.timeIntervalSince1970)! * 1000
+     let sVDur = (eachScreen.screeViewDuration != nil) ? eachScreen.screeViewDuration : 0
+     let lat = (eachScreen.latitude != nil) ? eachScreen.latitude : 0
+     let log = (eachScreen.longitude != nil) ? eachScreen.longitude : 0
+     let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
+     
+     dataDictionary["sourceName"] = (sourceName as AnyObject?)!
+     dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
+     dataDictionary["timeSpent"] = ("\(sVDur!)" as AnyObject?)!
+     dataDictionary["location"] = location as AnyObject
+     dataDictionary["device"] = self.deviceInfo() as AnyObject
+     dataDictionary["network"] = self.networkInfo() as AnyObject
+     
+     let screenViewDictionary:Dictionary<String, AnyObject> = ["sessionId":self.encodedSessionString as AnyObject,
+     "eventId":(sID as AnyObject?)!,
+     "userId":currentUserID() as AnyObject,
+     "eventType":"ScreenView" as AnyObject,
+     "event":"ScreenView" as AnyObject,
+     "timestamp":("\(sBTimeFormted)" as AnyObject?)!,
+     "data":dataDictionary as AnyObject]
+     
+     screenViews.append(screenViewDictionary as AnyObject)
+     }
+     
+     var eventsArray = Array<AnyObject>()
+     if self.identificationStatusUpdated == true {
+     eventsArray.append(self.identificationObject() as AnyObject)
+     }
+     
+     eventsArray = (eventsArray + screenViews + screenEvents) as Array<AnyObject>
+     let data = ["appId": ATTAnalytics.helper.appID! as AnyObject,
+     "events":eventsArray as AnyObject] as [String : AnyObject]
+     
+     return data as Dictionary<String, AnyObject>?
+     }
+     
+     return nil
+     }
+*/
+    
+    
     // MARK: - Formatting the schema
-    func formattedSchemaFromArray(eventsArray:Array<AnyObject>?) -> Dictionary<String, AnyObject>? {
+    
+    func fetchEventDictionaryArrayFromScreenViewModel(_ screenViewModel: ATTScreenViewModel) -> [[String : Any]]? {
+        
+        guard let screenEventsArray = screenViewModel.screenEventsArray as? [ATTEventModel],screenEventsArray.count > 0   else {
+            return nil
+        }
+        
+        let sourceName = fetchSourceName(screenViewModel)
+        let previousScreen = fetchPreviousScreen(screenViewModel)
+       
+        var eventDictionaryArray: [[String : Any]] = []
+        for eachEvent in screenEventsArray {
+            let eachEventDictionary = createEventSchema(eachEvent, sorcePageName: sourceName, previousScreenName: previousScreen)
+            
+            eventDictionaryArray.append(eachEventDictionary)
+        }
+        return eventDictionaryArray
+    }
+    func createScreenSchema(_ eachScreen: ATTScreenViewModel ) -> [String : Any] {
+        let screenViewID                = eachScreen.screenViewID ?? ""
+        let sourceName                  = fetchSourceName(eachScreen)
+        let previousScreen              = fetchPreviousScreen(eachScreen)
+        let screenViewBeginTime         = eachScreen.screenViewBeginTime ?? Date()
+        let screenViewBeginTimeFormted  = screenViewBeginTime.timeIntervalSince1970 * 1000
+        let screeViewDuration           = eachScreen.screeViewDuration ?? 0
+        let latitude                    = eachScreen.latitude ?? 0
+        let longitude                   = eachScreen.longitude ?? 0
+        let location                    = ["latitude":"\(latitude)", "longitude":"\(longitude)"]
+        
+        //**********old implementation*****
+        /*
+        var dataDictionary: [String: Any] = [:]
+        dataDictionary["sourceName"]        = sourceName
+        dataDictionary["previousScreen"]    = previousScreen
+        dataDictionary["timeSpent"]         = "\(screeViewDuration)"
+        dataDictionary["location"]          = location
+        dataDictionary["device"]            = self.deviceInfo()
+        dataDictionary["network"]           = self.networkInfo()
+        
+        let screenViewDictionary: [String: Any] = ["sessionId":self.encodedSessionString ?? "",
+                                                   "eventId":screenViewID,
+                                                   "userId":currentUserID(),
+                                                   "eventType":"ScreenView",
+                                                   "event":"ScreenView",
+                                                   "timestamp":"\(screenViewBeginTimeFormted)" ,
+            "data":dataDictionary]
+         */
+        
+        //**********New Implementation*******
+        let screenViewDictionary: [String: Any] = ["sessionId":self.encodedSessionString ?? "",
+                                                   "eventId":screenViewID,
+                                                   "userId":currentUserID(),
+                                                   "eventType":"ScreenView",
+                                                   "event":"ScreenView",
+                                                   "timestamp":"\(screenViewBeginTimeFormted)",
+                                                   "sourceName":sourceName,
+                                                   "previousScreen":previousScreen,
+                                                   "timeSpent":"\(screeViewDuration)",
+                                                   "location":location,
+                                                   "device":self.deviceInfo(),
+                                                   "os":self.deviceOSInfo(),
+                                                   "network":self.networkInfo(),
+                                                   "app":self.appInfo(),
+                                                   "lib":self.libInfo()]
+       
+        
+        return screenViewDictionary
+    }
+
+    func createEventSchema(_ eachEvent: ATTEventModel,sorcePageName sourceName: String,previousScreenName previousScreen: String ) -> [String : Any] {
+        
+        
+        let eventType =  eachEvent.eventType ?? ""
+        
+        let eventName = eachEvent.eventName ?? ""
+        
+        //let dURL = (eachEvent.dataURL != nil) ? eachEvent.dataURL : ""
+        let screenViewID = eachEvent.screenViewID ?? ""
+        let eventStartTime = eachEvent.eventStartTime ?? Date()
+        let eventStartTimeFormated = (eventStartTime.timeIntervalSince1970) * 1000
+        let eventDuration = eachEvent.eventDuration ?? 0
+        let latitude =  eachEvent.latitude ?? 0
+        let longitude =  eachEvent.longitude ?? 0
+        let location = ["latitude":"\(latitude)", "longitude":"\(longitude)"]
+        
+        var eventDataDictionary:[String: Any] = [:]
+        if let customParam = eachEvent.arguments{
+            for key in customParam.keys {
+                eventDataDictionary[key] = customParam[key]
+            }
+        }
+        
+        
+        let eventDictionary: [String:Any] = ["sessionId":self.encodedSessionString ?? "",
+                                             "eventType":eventType ,
+                                             "userId":currentUserID(),
+                                             "event":eventName ,
+                                             "eventId":screenViewID ,
+                                             "timestamp":"\(eventStartTimeFormated)",
+                                             "eventDuration":"\(eventDuration)",
+                                             "sourceName":sourceName,
+                                             "previousScreen":previousScreen,
+                                             "data":eventDataDictionary,
+                                             "location":location,
+                                             "device":self.deviceInfo(),
+                                             "os":self.deviceOSInfo(),
+                                             "network":self.networkInfo(),
+                                             "app":self.appInfo(),
+                                             "lib":self.libInfo()]
+        
+        return eventDictionary
+
+    }
+    func fetchSourceName(_ screenViewModel: ATTScreenViewModel) -> String{
+        let screenName = screenViewModel.screenName ?? ""
+        let screenTitle = screenViewModel.screenTitle ??  ""
+        
+        var sourceName = screenName
+        if  screenTitle != "" {
+            sourceName = screenTitle
+        }
+        return sourceName
+    }
+    func fetchPreviousScreen(_ screenViewModel: ATTScreenViewModel) -> String{
+        let previousScreenName = screenViewModel.previousScreenName ??  ""
+        let previousScreenTitle = screenViewModel.previousScreenTitle ?? ""
+        
+        var previousScreen = previousScreenName
+        if previousScreenTitle != "" {
+            previousScreen = previousScreenTitle
+        }
+        return previousScreen
+    }
+
+    func formattedSchemaFromArray(_ screenViewModelArray:[ATTScreenViewModel]) -> [String : Any]? {
         if self.sessionSyncCompleted == false {
             return self.syncableSessionObject() as Dictionary<String, AnyObject>?
         }
-        
-        var screenViews = Array<AnyObject>()
-        var screenEvents = Array<AnyObject>()
-        if (eventsArray?.count)! > 0 {
-            for screenViewIndex in 0...(eventsArray?.count)! - 1 {
-                let eachScreen:ATTScreenViewModel = eventsArray![screenViewIndex] as! ATTScreenViewModel
-                let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
-                
-                let sName = (eachScreen.screenName != nil) ? eachScreen.screenName : ""
-                let sTitle = (eachScreen.screenTitle != nil) ? eachScreen.screenTitle : ""
-                let sPName = (eachScreen.previousScreenName != nil) ? eachScreen.previousScreenName : ""
-                let sPTitle = (eachScreen.previousScreenTitle != nil) ? eachScreen.previousScreenTitle : ""
-                
-                var dataDictionary = [String: AnyObject]()
-                var sourceName = sName
-                if sTitle != nil && sTitle != "" {
-                    sourceName = sTitle
-                }
-                
-                var previousScreen = sPName
-                if sPTitle != nil && sPTitle != "" {
-                    previousScreen = sPTitle
-                }
-                
-                if eachScreen.screenEventsArray != nil && (eachScreen.screenEventsArray?.count)! > 0 {
-                    for eventsIndex in 0...(eachScreen.screenEventsArray?.count)! - 1 {
-                        let eachEvent:ATTEventModel = eachScreen.screenEventsArray?[eventsIndex] as! ATTEventModel
-                        
-                        let eType = (eachEvent.eventType != nil) ? eachEvent.eventType : ""
-                        let eName = (eachEvent.eventName != nil) ? eachEvent.eventName : ""
-                        //let dURL = (eachEvent.dataURL != nil) ? eachEvent.dataURL : ""
-                        let eStrtTim = (eachEvent.eventStartTime != nil) ? eachEvent.eventStartTime : Date()
-                        let eStrtTimFormated = (eStrtTim?.timeIntervalSince1970)! * 1000
-                        let eDur = (eachEvent.eventDuration != nil) ? eachEvent.eventDuration : 0
-                        let lat = (eachEvent.latitude != nil) ? eachEvent.latitude : 0
-                        let log = (eachEvent.longitude != nil) ? eachEvent.longitude : 0
-                        let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
-                        let customParam = (eachEvent.arguments != nil) ? eachEvent.arguments : Dictionary<String, AnyObject>()
-                        
-                        var dataDictionary = [String: AnyObject]()
-                        
-                        dataDictionary["eventDuration"] = ("\(eDur!)" as AnyObject?)!
-                        dataDictionary["location"] = location as AnyObject
-                        dataDictionary["device"] = self.deviceInfo() as AnyObject
-                        dataDictionary["network"] = self.networkInfo() as AnyObject
-                        dataDictionary["sourceName"] = (sourceName as AnyObject?)!
-                        dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
-                        
-                        for key in (customParam?.keys)! {
-                            dataDictionary[key] = customParam?[key]
-                        }
-                        
-                        let eventDictionary = ["sessionId":self.encodedSessionString as AnyObject,
-                                               "eventType":(eType as AnyObject?)!,
-                                               "userId":currentUserID()! as AnyObject,
-                                               "event":(eName as AnyObject?)!,
-                                               "eventId":(sID as AnyObject?)!,
-                                               "timestamp":("\(eStrtTimFormated)" as AnyObject?)!,
-                                               "data":dataDictionary as AnyObject] as [String : AnyObject]
-                        
-                        screenEvents.append(eventDictionary as AnyObject)
-                    }
-                }
-                
-                //let sID = (eachScreen.screenViewID != nil) ? eachScreen.screenViewID : ""
-                
-                let sBTime = (eachScreen.screenViewBeginTime != nil) ? eachScreen.screenViewBeginTime : Date()
-                let sBTimeFormted = (sBTime?.timeIntervalSince1970)! * 1000
-                let sVDur = (eachScreen.screeViewDuration != nil) ? eachScreen.screeViewDuration : 0
-                let lat = (eachScreen.latitude != nil) ? eachScreen.latitude : 0
-                let log = (eachScreen.longitude != nil) ? eachScreen.longitude : 0
-                let location = ["latitude":"\(lat!)", "longitude":"\(log!)"]
-                
-                dataDictionary["sourceName"] = (sourceName as AnyObject?)!
-                dataDictionary["previousScreen"] = (previousScreen as AnyObject?)!
-                dataDictionary["timeSpent"] = ("\(sVDur!)" as AnyObject?)!
-                dataDictionary["location"] = location as AnyObject
-                dataDictionary["device"] = self.deviceInfo() as AnyObject
-                dataDictionary["network"] = self.networkInfo() as AnyObject
-                
-                let screenViewDictionary:Dictionary<String, AnyObject> = ["sessionId":self.encodedSessionString as AnyObject,
-                                                                          "eventId":(sID as AnyObject?)!,
-                                                                          "userId":currentUserID()! as AnyObject,
-                                                                          "eventType":"ScreenView" as AnyObject,
-                                                                          "event":"ScreenView" as AnyObject,
-                                                                          "timestamp":("\(sBTimeFormted)" as AnyObject?)!,
-                                                                          "data":dataDictionary as AnyObject]
-                
-                screenViews.append(screenViewDictionary as AnyObject)
-            }
-            
-            var eventsArray = Array<AnyObject>()
-            if self.identificationStatusUpdated == true {
-                eventsArray.append(self.identificationObject() as AnyObject)
-            }
-            
-            eventsArray = (eventsArray + screenViews + screenEvents) as Array<AnyObject>
-            let data = ["appId": ATTAnalytics.helper.appID! as AnyObject,
-                        "events":eventsArray as AnyObject] as [String : AnyObject]
-            
-            return data as Dictionary<String, AnyObject>?
+        let eventCount =  screenViewModelArray.count
+        if eventCount <= 0 {
+            return nil
         }
-       
-        return nil
+        
+        var screenViews: [Any]  = []
+        var screenEvents: [Any] = []
+        
+        for eachScreen in screenViewModelArray {
+            
+            
+            if let eventDictionaryArray = fetchEventDictionaryArrayFromScreenViewModel(eachScreen){
+                screenEvents = screenEvents + eventDictionaryArray
+            }
+            
+            // check is need to pass the screen view event with request 
+            if eachScreen.isNeedToPassScreenViewEvent {
+            let screenViewDictionary  = self.createScreenSchema(eachScreen)
+            screenViews.append(screenViewDictionary)
+            }
+        }
+        
+        var eventsArray: [Any] = []
+        if self.identificationStatusUpdated == true {
+            eventsArray.append(self.identificationObject())
+        }
+        
+        eventsArray = (eventsArray + screenViews + screenEvents)
+        let data = ["appId": ATTAnalytics.helper.appID ?? "",
+                    "events":eventsArray] as [String : Any]
+        return data
+        
     }
     
-    func syncableSessionObject() -> Dictionary<String, AnyObject>? {
-        var eventsArray = Array<AnyObject>()
+    func syncableSessionObject() -> [String:Any] {
+        var eventsArray: [Any] = []
         if self.handShakeCompleted == false {
-            eventsArray.append(self.sessionInfo() as AnyObject)
+            eventsArray.append(self.sessionInfo())
         }
         
         if self.identificationRequired == true {
-            eventsArray.append(self.identificationObject() as AnyObject)
+            eventsArray.append(self.identificationObject())
         }
         
-        let data = ["appId": ATTAnalytics.helper.appID! as AnyObject,
-                    "events":eventsArray as AnyObject] as [String : AnyObject]
+        let data = ["appId": ATTAnalytics.helper.appID ?? "",
+                    "events":eventsArray] as [String : Any]
         
-        return data as Dictionary<String, AnyObject>?
+        return data
     }
     
-    private func identificationObject() -> Dictionary<String, AnyObject>? {
-        var identificationDictionary = [String: AnyObject]()
+    private func identificationObject() -> [String:Any] {
+        var identificationDictionary: [String: Any] = [:]
         
-        identificationDictionary["eventType"] = "Identify" as AnyObject?
-        identificationDictionary["event"] = "Identify" as AnyObject?
-        identificationDictionary["sessionId"] = self.encodedSessionString as AnyObject
-        identificationDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)" as AnyObject
-        identificationDictionary["userId"] = self.currentUserID() as AnyObject
+        identificationDictionary["eventType"]   = "Identify"
+        identificationDictionary["event"]       = "Identify"
+        identificationDictionary["sessionId"]   = self.encodedSessionString
+        identificationDictionary["timestamp"]   = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+        identificationDictionary["userId"]      = self.currentUserID()
         
-        var dataDictionary = [String: AnyObject]()        
-        
-        var userProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? Dictionary<String, AnyObject>
-        let userType = UserDefaults.standard.object(forKey: "ATTUserLoginType") as? String
-        
-        if userProfile == nil {
-            userProfile = [String: AnyObject]()
+        var dataDictionary: [String:Any] = [:]
+        var userProfile: [String:Any] = [:]
+        if let savedUserProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? [String:Any] {
+            userProfile = savedUserProfile
         }
         
-        userProfile?["userStatus"] = "0" as AnyObject?
+        userProfile["userStatus"] = "0"
         
-        if userType != nil && userType == "host" {
-            userProfile?["userStatus"] = "1" as AnyObject?
+        if let userType = UserDefaults.standard.object(forKey: "ATTUserLoginType") as? String,userType == "host" {
+            userProfile["userStatus"] = "1"
         }
         
-        if userProfile != nil {
-            dataDictionary["user"] = userProfile as AnyObject?
-        }
+        dataDictionary["user"]      = userProfile
+        dataDictionary["os"]        = self.deviceOSInfo()
+        dataDictionary["device"]    = self.deviceInfo()
+        dataDictionary["network"]   = self.networkInfo()
+        dataDictionary["app"]       = self.appInfo()
+        dataDictionary["lib"]       = self.libInfo()
         
-        dataDictionary["device"] = self.deviceInfo() as AnyObject
-        dataDictionary["network"] = self.networkInfo() as AnyObject
-        dataDictionary["app"] = self.appInfo() as AnyObject
-        dataDictionary["lib"] = self.libInfo() as AnyObject
-        
-        identificationDictionary["data"] = dataDictionary as AnyObject
+        identificationDictionary["data"] = dataDictionary
         
         return identificationDictionary
     }
     
-    private func appInfo() -> Dictionary<String, AnyObject>? {
+    private func appInfo() -> [String:Any] {
         let dictionary = Bundle.main.infoDictionary
-        let version = dictionary?["CFBundleShortVersionString"] as? String
-        let appName = dictionary?["CFBundleName"] as? String
+        let version = dictionary?["CFBundleShortVersionString"]
+        let appName = dictionary?["CFBundleName"]
         let bundleID = Bundle.main.bundleIdentifier
         
-        var appInfoDictionary = [String: AnyObject]()
+        var appInfoDictionary : [String:Any] = [:]
         
-        appInfoDictionary["version"] = version as AnyObject?
-        appInfoDictionary["nameSpace"] = bundleID as AnyObject?
-        appInfoDictionary["name"] = appName as AnyObject?
-        appInfoDictionary["language"] = "" as AnyObject?
-        appInfoDictionary["build"] = "" as AnyObject?
-        
+        appInfoDictionary["version"] = version
+        appInfoDictionary["nameSpace"] = bundleID
+        appInfoDictionary["name"] = appName
+        appInfoDictionary["language"] = ""
+        appInfoDictionary["build"] = ""
+        appInfoDictionary["variant"] = ATTAnalytics.helper.appVariant
+
         return appInfoDictionary
     }
     
-    private func sessionInfo() -> Dictionary<String, AnyObject>? {
-        var sessionInfoDictionary = [String: AnyObject]()
+    private func sessionInfo() -> [String:Any] {
+        var sessionInfoDictionary: [String:Any] = [:]
         
-        sessionInfoDictionary["sessionId"] = self.encodedSessionString as AnyObject?
-        sessionInfoDictionary["userId"] = self.currentUserID() as AnyObject?
-        sessionInfoDictionary["event"] = "SessionStart" as AnyObject?
-        sessionInfoDictionary["eventType"] = "SessionStart" as AnyObject?
-        sessionInfoDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp()!)" as AnyObject?
+        sessionInfoDictionary["sessionId"] = self.encodedSessionString
+        sessionInfoDictionary["userId"] = self.currentUserID()
+        sessionInfoDictionary["event"] = "SessionStart"
+        sessionInfoDictionary["eventType"] = "SessionStart"
+        sessionInfoDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
         
         return sessionInfoDictionary
     }
     
-    private func libInfo() -> Dictionary<String, String>? {
-        return ["libVersion":"0.0.1"]
+    private func libInfo() -> [String:Any] {
+        return ["libVersion":"0.0.1","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
     }
     
-    private func deviceInfo() -> Dictionary<String, AnyObject>? {
-        var appInfoDictionary = [String: AnyObject]()
+    private func deviceOSInfo() -> [String:Any] {
+        var appOSInfoDictionary: [String:Any] = [:]
+        appOSInfoDictionary["os"] = "iOS"
+        appOSInfoDictionary["version"] = UIDevice.current.systemVersion
+        return appOSInfoDictionary
         
-        appInfoDictionary["deviceId"] = UIDevice.current.identifierForVendor!.uuidString as AnyObject?
-        appInfoDictionary["os"] = "iOS" as AnyObject?
-        appInfoDictionary["type"] = UIDevice.current.modelType as AnyObject?
-        appInfoDictionary["version"] = UIDevice.current.systemVersion as AnyObject?
-        appInfoDictionary["manufacture"] = "Apple" as AnyObject?
-        appInfoDictionary["model"] = UIDevice.current.model as AnyObject?
-        appInfoDictionary["name"] = UIDevice.current.name as AnyObject?
-        appInfoDictionary["locale"] = NSLocale.current.languageCode as AnyObject?
-        appInfoDictionary["resolution"] = "\(UIScreen.main.bounds.size.width) x \(UIScreen.main.bounds.size.height)" as AnyObject?
+    }
+
+    private func deviceInfo() -> [String:Any] {
+        
+        var appInfoDictionary: [String:Any] = [:]
+        
+        appInfoDictionary["deviceId"] = UIDevice.current.identifierForVendor?.uuidString
+        appInfoDictionary["os"] = "iOS"
+        appInfoDictionary["type"] = UIDevice.current.modelType
+        appInfoDictionary["version"] = UIDevice.current.systemVersion
+        appInfoDictionary["manufacture"] = "Apple"
+        appInfoDictionary["model"] = UIDevice.current.model
+        appInfoDictionary["name"] = UIDevice.current.name
+        appInfoDictionary["locale"] = NSLocale.current.languageCode
+        appInfoDictionary["resolution"] = "\(UIScreen.main.bounds.size.width) x \(UIScreen.main.bounds.size.height)"
         
         return appInfoDictionary
     }
     
-    private func networkInfo() -> Dictionary<String, AnyObject>? {
-        var networkInfoDictionary = [String: AnyObject]()
+    private func networkInfo() -> [String:Any] {
+        var networkInfoDictionary: [String:Any] = [:]
         
         if ATTReachability.reachability.currentReachabilityStatus == .reachableViaWiFi {
-            networkInfoDictionary["type"] = "Wifi" as AnyObject?
+            networkInfoDictionary["type"] = "Wifi"
         } else {
-            networkInfoDictionary["type"] = "Cellular" as AnyObject?
-            if let carrierName = ATTReachability.reachability.carrierName() {
-                print(carrierName)
-                networkInfoDictionary["carrier"] = carrierName as AnyObject?
-
-            }
+            networkInfoDictionary["type"] = "Cellular"
+            networkInfoDictionary["carrier"] = ATTReachability.reachability.carrierName() ?? ""
         }
         
-        networkInfoDictionary["connectionSpeed"] = "" as AnyObject?
+        networkInfoDictionary["connectionSpeed"] = ""
         
         return networkInfoDictionary
     }
     
-    private func currentUserID() -> String? {
+    private func currentUserID() -> String {
         var userID = UserDefaults.standard.object(forKey: "ATTUserID") as? String
         
         if userID == nil || userID == "" {
@@ -381,7 +599,7 @@ class ATTFlushManager: NSObject {
             UserDefaults.standard.setValue("guest", forKey: "ATTUserLoginType")
         }
         
-        return userID
+        return userID ?? ""
     }
 }
 
@@ -396,14 +614,14 @@ public extension UIDevice {
         }
         
         switch identifier {
-            case "iPod5,1", "iPod7,1","iPhone3,1", "iPhone3,2", "iPhone3,3", "iPhone4,1", "iPhone5,1", "iPhone5,2", "iPhone5,3", "iPhone6,1", "iPhone6,2", "iPhone7,2", "iPhone7,1", "iPhone8,1", "iPhone8,2","iPhone9,1", "iPhone9,3", "iPhone9,2", "iPhone9,4", "iPhone8,4":
-                
-                return "mobile"
-                
-            case "iPad2,1", "iPad2,2", "iPad2,3", "iPad2,4","iPad3,1", "iPad3,2", "iPad3,3", "iPad3,4", "iPad3,5", "iPad3,6", "iPad4,1", "iPad4,2", "iPad4,3", "iPad5,3", "iPad5,4", "iPad2,5", "iPad2,6", "iPad2,7","iPad4,4", "iPad4,5", "iPad4,6", "iPad4,7", "iPad4,8", "iPad4,9", "iPad5,1", "iPad5,2", "iPad6,3", "iPad6,4", "iPad6,7", "iPad6,8":return "tablet"
-            case "AppleTV5,3":                              return "tv"
-            case "i386", "x86_64":                          return "simulator"
-            default:                                        return identifier
+        case "iPod5,1", "iPod7,1","iPhone3,1", "iPhone3,2", "iPhone3,3", "iPhone4,1", "iPhone5,1", "iPhone5,2", "iPhone5,3", "iPhone6,1", "iPhone6,2", "iPhone7,2", "iPhone7,1", "iPhone8,1", "iPhone8,2","iPhone9,1", "iPhone9,3", "iPhone9,2", "iPhone9,4", "iPhone8,4":
+            
+            return "mobile"
+            
+        case "iPad2,1", "iPad2,2", "iPad2,3", "iPad2,4","iPad3,1", "iPad3,2", "iPad3,3", "iPad3,4", "iPad3,5", "iPad3,6", "iPad4,1", "iPad4,2", "iPad4,3", "iPad5,3", "iPad5,4", "iPad2,5", "iPad2,6", "iPad2,7","iPad4,4", "iPad4,5", "iPad4,6", "iPad4,7", "iPad4,8", "iPad4,9", "iPad5,1", "iPad5,2", "iPad6,3", "iPad6,4", "iPad6,7", "iPad6,8":return "tablet"
+        case "AppleTV5,3":                              return "tv"
+        case "i386", "x86_64":                          return "simulator"
+        default:                                        return identifier
         }
     }
 }

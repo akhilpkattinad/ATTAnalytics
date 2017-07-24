@@ -11,6 +11,8 @@ import UIKit
 
 public class ATTAnalytics: NSObject {
     
+    
+    
     // MARK: Public members
     // MARK: Pubclic Constants
     public static let TrackingNotification = "RegisterForTrakingNotification"
@@ -23,6 +25,11 @@ public class ATTAnalytics: NSObject {
     public static let TrackingTypeManual = "Manual"
     
     public var appID:String?
+    public var trackingStateTypes: TrackingTypes?
+    public var trackingMethodTypes: TrackingTypes?
+
+    public var appVariant = ""
+    public var isDebug    = false
 
     // MARK: Enums
     public enum TrackingTypes {
@@ -82,6 +89,7 @@ public class ATTAnalytics: NSObject {
     // MARK: - Public Methods
     // Method with Local resource path
     public func beginTracking(appID:String?, pathForConfigFile:String?) -> Void {
+        
         self.beginTracking(appID:appID,
                            pathForConfigFile:pathForConfigFile,
                            stateTrackingType:.Manual,
@@ -91,8 +99,13 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               pathForConfigFile:String?,
                               stateTrackingType stateType:TrackingTypes?,
-                              actionTrackingType methodType:TrackingTypes?) -> Void {
+                              actionTrackingType methodType:TrackingTypes?,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
         self.appID = appID
+        self.trackingStateTypes = stateType
+        self.trackingMethodTypes = methodType
+        self.appVariant = variant
+        self.isDebug = isfrmaeWorkDebug
+
         self.configurationFilePath = pathForConfigFile
         self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
         self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
@@ -107,8 +120,12 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               configuration:Dictionary<String, AnyObject>?,
                               stateTrackingType stateType:TrackingTypes?,
-                              actionTrackingType methodType:TrackingTypes?) -> Void {
+                              actionTrackingType methodType:TrackingTypes?,appVariant variant: String = "debug",isfrmaeWorkDebug: Bool = false) -> Void {
         self.appID = appID
+        self.appVariant = variant
+        self.isDebug = isfrmaeWorkDebug
+        self.trackingStateTypes = stateType
+        self.trackingMethodTypes = methodType
         self.createConfigParser(configurations:configuration)
         self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
         self.setupMiddlewareManager()
@@ -119,8 +136,10 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               pathForConfigFile:String?,
                               stateTrackingType stateType:String?,
-                              actionTrackingType methodType:String?) -> Void {
+                              actionTrackingType methodType:String?,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
         self.appID = appID
+        self.appVariant = variant
+        self.isDebug = isfrmaeWorkDebug
         self.configurationFilePath = pathForConfigFile
         self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
         self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
@@ -130,8 +149,11 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               configuration:Dictionary<String, AnyObject>?,
                               stateTrackingType stateType:String?,
-                              actionTrackingType methodType:String?) -> Void {
+                              actionTrackingType methodType:String?,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
         self.appID = appID
+        self.appVariant = variant
+        self.isDebug = isfrmaeWorkDebug
+
         self.createConfigParser(configurations:configuration)
         self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
         self.setupMiddlewareManager()
@@ -226,7 +248,8 @@ public class ATTAnalytics: NSObject {
         if methodType == ATTAnalytics.TrackingTypeAuto {
             mType = .Automatic
         }
-        
+        self.trackingStateTypes = sType
+        self.trackingMethodTypes = mType
         self.configureSwizzling(stateTracking:sType, methodTracking:mType)
     }
     

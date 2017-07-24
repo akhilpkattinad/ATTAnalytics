@@ -26,8 +26,8 @@ class ATTMiddlewareSchemaManager: NSObject {
     var previousScreenTitle:String?
     
     // MARK: Lazy initializations
-    lazy var syncableSchemaArray: Array<AnyObject> = {
-        return Array()
+    lazy var syncableSchemaArray: [Any] = {
+        return []
     }()
     
     lazy var coreDataManager: ATTCoreDataManager = {
@@ -160,7 +160,14 @@ class ATTMiddlewareSchemaManager: NSObject {
                            eventStartTime startTime:Date?,
                            customArguments arguments:Dictionary<String, AnyObject>?,
                            eventDuration duration:Double?) -> Void {
-        let newEvent = ATTEventModel(screenViewID:self.screenViewModel?.screenViewID,
+        var newScreenID = ""
+        if self.screenViewModel?.screenViewID == nil{
+            newScreenID = self.newUniqueID() ?? ""
+        }else{
+           newScreenID = (self.screenViewModel?.screenViewID)!
+        }
+        
+        let newEvent = ATTEventModel(screenViewID:newScreenID,
                                      eventType:"CustomEvent",
                                      eventName:eventName,
                                      eventStartTime:startTime,
@@ -173,16 +180,17 @@ class ATTMiddlewareSchemaManager: NSObject {
     }
     
     public func newUniqueID() -> String? {
-        return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(self.timeStamp()!)"
+        return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(self.timeStamp())"
     }
     
-    func timeStamp() -> String? {
+    func timeStamp() -> String {
         return self.timestamp
     }
 }
 
 // MARK: - Flush manager delegates
 extension ATTMiddlewareSchemaManager:ATTFlushManagerDelegate {
+    /*
     func flushData() -> Array<AnyObject>? {
         self.syncableSchemaArray.removeAll()
         let allScreens = self.coreDataManager.fetchAllScreens()! as Array<AnyObject>
@@ -233,7 +241,67 @@ extension ATTMiddlewareSchemaManager:ATTFlushManagerDelegate {
         }
         
         return self.syncableSchemaArray
+    }*/
+     func createScreenModelForscreenViewID(_ screenViewID: String) -> ATTScreenViewModel {
+        
+        guard let screenViewArray = self.coreDataManager.fetchScreenWithScreenID(screenID: screenViewID),screenViewArray.count > 0 else {
+            let screenModel = ATTScreenViewModel()
+            screenModel.isNeedToPassScreenViewEvent = false
+            screenModel.screenViewID = screenViewID
+            return screenModel
+        }
+        let eachScreen = screenViewArray.first
+        let screenModel = ATTScreenViewModel(screenViewID:screenViewID,
+                                             screenName:eachScreen?.value(forKeyPath: "presentScreen") as? String,
+                                             screenTitle:eachScreen?.value(forKeyPath: "screenTitle") as? String,
+                                             previousScreen:eachScreen?.value(forKeyPath: "previousScreen") as? String,
+                                             previousScreenTitle:eachScreen?.value(forKeyPath: "previousScreenTitle") as? String,
+                                             screenViewBeginAt:eachScreen?.value(forKeyPath: "screenWatchedTime") as? Date,
+                                             latitude:eachScreen?.value(forKeyPath: "latitude") as? Double,
+                                             longitude:eachScreen?.value(forKeyPath: "longitude") as? Double)
+        
+        screenModel.screeViewDuration = eachScreen?.value(forKeyPath: "screenWatchDuration") as? Double
+        return screenModel
+        
     }
+    func createScreenModelForEvent(_ eachEvent: AnyObject) -> ATTScreenViewModel {
+        let screenViewID = eachEvent.value(forKeyPath: "screenViewID") as! String
+        let screenModel = createScreenModelForscreenViewID(screenViewID)
+        let eventModel = ATTEventModel(screenViewID:screenViewID,
+                                       eventType:eachEvent.value(forKeyPath: "eventType") as? String,
+                                       eventName:eachEvent.value(forKeyPath: "eventName") as? String,
+                                       eventStartTime:eachEvent.value(forKeyPath: "eventStartTime") as? Date,
+                                       eventDuration:eachEvent.value(forKeyPath: "eventDuration") as? Double,
+                                       latitude:eachEvent.value(forKeyPath: "latitude") as? CLLocationDegrees,
+                                       longitude:eachEvent.value(forKeyPath: "longitude") as? CLLocationDegrees)
+        
+        if let customParamData = eachEvent.value(forKeyPath: "customParam") as? Data ,let customParam = try? JSONSerialization.jsonObject(with: customParamData, options: []) as? [String:AnyObject] {
+            eventModel.arguments = customParam
+        }
+        
+        eventModel.dataURL = eachEvent.value(forKeyPath: "dataURL") as? String
+        
+        
+        screenModel.screenEventsArray = [eventModel]
+        
+        return screenModel
+    }
+    
+    func flushData() -> [Any] {
+        self.syncableSchemaArray.removeAll()
+        
+        guard let allEvents =   self.coreDataManager.fetchAllEvents()  else {
+            return []
+        }
+        for eachEvent in allEvents {
+            if let _ = eachEvent.value(forKeyPath: "screenViewID") as? String {
+                let screenModel = createScreenModelForEvent(eachEvent)
+                self.syncableSchemaArray.append(screenModel)
+            }
+        }
+        return self.syncableSchemaArray
+    }
+ 
     
     func removedSyncedObjects(screenIDArray:Array<String>?) -> Void {
         self.coreDataManager.removeSyncedObjects(screenIDArray: screenIDArray!)
