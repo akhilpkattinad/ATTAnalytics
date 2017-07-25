@@ -139,6 +139,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _Nonnull TrackingTypeManual;)
 + (NSString * _Nonnull)TrackingTypeManual;
 @property (nonatomic, copy) NSString * _Nullable appID;
+@property (nonatomic, copy) NSString * _Nonnull appVariant;
+@property (nonatomic) BOOL isDebug;
 /**
   Shared Object
 */
@@ -146,8 +148,8 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, strong) ATTAnalytics
 + (ATTAnalytics * _Nonnull)helper;
 - (void)beginTrackingWithAppID:(NSString * _Nullable)appID pathForConfigFile:(NSString * _Nullable)pathForConfigFile;
 - (void)beginTrackingWithAppID:(NSString * _Nullable)appID configuration:(NSDictionary<NSString *, id> * _Nullable)configuration;
-- (void)beginTrackingWithAppID:(NSString * _Nullable)appID pathForConfigFile:(NSString * _Nullable)pathForConfigFile stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType;
-- (void)beginTrackingWithAppID:(NSString * _Nullable)appID configuration:(NSDictionary<NSString *, id> * _Nullable)configuration stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType;
+- (void)beginTrackingWithAppID:(NSString * _Nullable)appID pathForConfigFile:(NSString * _Nullable)pathForConfigFile stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType appVariant:(NSString * _Nonnull)variant isfrmaeWorkDebug:(BOOL)isfrmaeWorkDebug;
+- (void)beginTrackingWithAppID:(NSString * _Nullable)appID configuration:(NSDictionary<NSString *, id> * _Nullable)configuration stateTrackingType:(NSString * _Nullable)stateType actionTrackingType:(NSString * _Nullable)methodType appVariant:(NSString * _Nonnull)variant isfrmaeWorkDebug:(BOOL)isfrmaeWorkDebug;
 /**
   Can be called manually for Manual event tracking
   <em>customArguments</em> is used when an object requires to trigger event with dynamic values

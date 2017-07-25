@@ -222,6 +222,7 @@ public class ATTAnalytics: NSObject {
     }
 
     public func resetUser() -> Void {
+        
         UserDefaults.standard.setValue("", forKey: "ATTUserID")
         UserDefaults.standard.setValue("", forKey: "ATTUserProfile")
         NotificationCenter.default.post(name:NSNotification.Name(rawValue:ATTAnalytics.LoggoutNotification),

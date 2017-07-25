@@ -60,10 +60,16 @@ class ATTFlushManager: NSObject {
     // MARK: - Session management
     func createSession() -> Void {
         self.handShakeCompleted = false
+        
+        /*
         let deviceId = UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: "") as String
         let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
-        let appID = ATTAnalytics.helper.appID!
+        let appID = ATTAnalytics.helper.appID ?? ""
         let sessionID = "\(deviceId)-\(appID)-\(timeStamp)"
+         */
+        let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+
+        let sessionID = "\(currentUserID())-\(timeStamp)" //userid +time
         self.encodedSessionString = self.base64Encoded(string: sessionID)!
         self.syncNewSession()
     }
@@ -80,11 +86,13 @@ class ATTFlushManager: NSObject {
     func identificationStatusChanged() -> Void {
         self.identificationStatusUpdated = true
         UserDefaults.standard.setValue("host", forKey: "ATTUserLoginType")
+        createSession()
     }
     
     func userLoggedOut() -> Void {
         self.identificationStatusUpdated = true
         UserDefaults.standard.setValue("guest", forKey: "ATTUserLoginType")
+        createSession()
     }
     
     // MARK: - Handshake
@@ -593,7 +601,7 @@ class ATTFlushManager: NSObject {
         var userID = UserDefaults.standard.object(forKey: "ATTUserID") as? String
         
         if userID == nil || userID == "" {
-            userID = "\(ATTMiddlewareSchemaManager.manager.newUniqueID()!)" as String?
+            userID = "\(ATTMiddlewareSchemaManager.manager.guestUniqueID())" 
             userID = self.base64Encoded(string: userID)
             UserDefaults.standard.setValue(userID, forKey: "ATTUserID")
             UserDefaults.standard.setValue("guest", forKey: "ATTUserLoginType")

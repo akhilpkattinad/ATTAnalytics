@@ -162,7 +162,7 @@ class ATTMiddlewareSchemaManager: NSObject {
                            eventDuration duration:Double?) -> Void {
         var newScreenID = ""
         if self.screenViewModel?.screenViewID == nil{
-            newScreenID = self.newUniqueID() ?? ""
+            newScreenID = self.newUniqueID()
         }else{
            newScreenID = (self.screenViewModel?.screenViewID)!
         }
@@ -179,10 +179,14 @@ class ATTMiddlewareSchemaManager: NSObject {
         self.coreDataManager.createEvents(event: newEvent)
     }
     
-    public func newUniqueID() -> String? {
+    public func newUniqueID() -> String {
         return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(self.timeStamp())"
     }
-    
+    public func guestUniqueID() -> String {
+        let bundleID    = Bundle.main.bundleIdentifier ?? ""
+        //userid = deviceid+bundleID
+        return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(bundleID)"
+    }
     func timeStamp() -> String {
         return self.timestamp
     }
