@@ -28,14 +28,14 @@ class ATTCoreDataManager: NSObject {
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR PRODUCTION PURPOSE ONLY - AFTER CONVERTING TO FRAMEWORK
     /*
-    lazy var managedObjectModel: NSManagedObjectModel = {
-        let bundlePath = Bundle.main.path(forResource: "ATTBackends", ofType: "bundle")
-        let bundle = Bundle(path: bundlePath!)
-        let modelPath = bundle?.path(forResource:"ATTDB", ofType:"momd")
-        let modelURL = URL(fileURLWithPath: modelPath!)
-        return NSManagedObjectModel(contentsOf: modelURL)!
-    }()
-    */
+     lazy var managedObjectModel: NSManagedObjectModel = {
+     let bundlePath = Bundle.main.path(forResource: "ATTBackends", ofType: "bundle")
+     let bundle = Bundle(path: bundlePath!)
+     let modelPath = bundle?.path(forResource:"ATTDB", ofType:"momd")
+     let modelURL = URL(fileURLWithPath: modelPath!)
+     return NSManagedObjectModel(contentsOf: modelURL)!
+     }()
+     */
     
     lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel:self.managedObjectModel)
@@ -46,8 +46,8 @@ class ATTCoreDataManager: NSObject {
                                                at: url,
                                                options: [NSMigratePersistentStoresAutomaticallyOption: true,
                                                          NSInferMappingModelAutomaticallyOption: true
-                                                        ]
-                                                )
+                ]
+            )
         } catch {
             // Report any error we got.
             print("CoreData error \(error), \(error._userInfo)")
@@ -82,20 +82,20 @@ class ATTCoreDataManager: NSObject {
     /////////// REPLACE THE ABOVE CODE WITH THE BELOW GIVEN CODE WHEN CONVERTING TO FRAMEWORK/////
     ///// CREATE A BUNDLE TARGET AND ADD THE .XCDATAMODELLD FILE AS COMPILE SOURCE//////
     ///// HOST PROJECT MUST INCLUDE THE .BUNDLE ALSO///////
- 
+    
     /*
-    // MARK: - Core Data stack
-    @available(iOS 10.0, *)
-    lazy var persistentContainer: NSPersistentContainer = {
-        let container = NSPersistentContainer(name: "ATTDB", managedObjectModel: self.managedObjectModel)
-        container.loadPersistentStores(completionHandler: { (storeDescription, error) in
-            if let error = error as NSError? {
-                fatalError("Unresolved error \(error), \(error.userInfo)")
-            }
-        })
-        return container
-    }()
-    */
+     // MARK: - Core Data stack
+     @available(iOS 10.0, *)
+     lazy var persistentContainer: NSPersistentContainer = {
+     let container = NSPersistentContainer(name: "ATTDB", managedObjectModel: self.managedObjectModel)
+     container.loadPersistentStores(completionHandler: { (storeDescription, error) in
+     if let error = error as NSError? {
+     fatalError("Unresolved error \(error), \(error.userInfo)")
+     }
+     })
+     return container
+     }()
+     */
     
     func currentContext() -> NSManagedObjectContext {
         var managedContext:NSManagedObjectContext!
@@ -162,7 +162,7 @@ class ATTCoreDataManager: NSObject {
             return nil
         }
     }
-
+    
     func fetchAllScreens() -> Array<AnyObject>? {
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: "Screen")
         do {
@@ -184,7 +184,7 @@ class ATTCoreDataManager: NSObject {
             return nil
         }
     }
-
+    
     func createEvents(event:ATTEventModel?) -> Void {
         if event != nil {
             let entity = NSEntityDescription.entity(forEntityName: "Events",
@@ -244,7 +244,7 @@ class ATTCoreDataManager: NSObject {
             } catch let error as NSError {
                 // TODO: handle the error
                 print("Could not save. \(error), \(error.userInfo)")
-
+                
             }
             
         } else {
@@ -261,7 +261,7 @@ class ATTCoreDataManager: NSObject {
         }
         
     }
-
+    
     func deleteSyncableObjects(screenID:String?, forEntity entityName:String?) -> Void {
         let fetchRequest = NSFetchRequest<NSManagedObject>(entityName: entityName!)
         fetchRequest.predicate = NSPredicate(format: "screenViewID = %@", screenID!)

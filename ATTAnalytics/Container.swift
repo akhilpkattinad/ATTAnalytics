@@ -18,7 +18,7 @@ class Container: NSObject {
     var completion:completionHandler?
     private var operationQueue:OperationQueue?
     private var timeStamp: String {
-        return "\(Date().timeIntervalSince1970 * 1000)"
+        return "\(Date().millisecondsSince1970)"
     }
     
     enum RequestMethod {

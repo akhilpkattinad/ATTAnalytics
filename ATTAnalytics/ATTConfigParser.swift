@@ -31,9 +31,9 @@ class ATTConfigParser: NSObject {
     func findConfigurationForClass(aClass:AnyClass?,
                                    withSelector selector:Selector?,
                                    ofStateType type:String?,
-                                   havingAppSpecificKeyword keyword:String?) -> Array<AnyObject>? {
+                                   havingAppSpecificKeyword keyword:String?) -> [AnyObject]? {
     
-        var resultArray:Array = Array<AnyObject>()
+        var resultArray: [AnyObject] = []
         if self.configurations != nil {
             let root:Array? = self.configurations![ATTConfigConstants.Analytics] as? Array<AnyObject>
             if root != nil {

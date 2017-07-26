@@ -62,13 +62,13 @@ class ATTFlushManager: NSObject {
         self.handShakeCompleted = false
         
         /*
-        let deviceId = UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: "") as String
-        let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
-        let appID = ATTAnalytics.helper.appID ?? ""
-        let sessionID = "\(deviceId)-\(appID)-\(timeStamp)"
+         let deviceId = UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: "") as String
+         let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+         let appID = ATTAnalytics.helper.appID ?? ""
+         let sessionID = "\(deviceId)-\(appID)-\(timeStamp)"
          */
         let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
-
+        
         let sessionID = "\(currentUserID())-\(timeStamp)" //userid +time
         self.encodedSessionString = self.base64Encoded(string: sessionID)!
         self.syncNewSession()
@@ -298,7 +298,7 @@ class ATTFlushManager: NSObject {
      
      return nil
      }
-*/
+     */
     
     
     // MARK: - Formatting the schema
@@ -309,12 +309,9 @@ class ATTFlushManager: NSObject {
             return nil
         }
         
-        let sourceName = fetchSourceName(screenViewModel)
-        let previousScreen = fetchPreviousScreen(screenViewModel)
-       
         var eventDictionaryArray: [[String : Any]] = []
         for eachEvent in screenEventsArray {
-            let eachEventDictionary = createEventSchema(eachEvent, sorcePageName: sourceName, previousScreenName: previousScreen)
+            let eachEventDictionary = createEventSchema(eachEvent)
             
             eventDictionaryArray.append(eachEventDictionary)
         }
@@ -322,56 +319,56 @@ class ATTFlushManager: NSObject {
     }
     func createScreenSchema(_ eachScreen: ATTScreenViewModel ) -> [String : Any] {
         let screenViewID                = eachScreen.screenViewID ?? ""
-        let sourceName                  = fetchSourceName(eachScreen)
-        let previousScreen              = fetchPreviousScreen(eachScreen)
+        // let sourceName                  = fetchSourceName(eachScreen)
+        // let previousScreen              = fetchPreviousScreen(eachScreen)
         let screenViewBeginTime         = eachScreen.screenViewBeginTime ?? Date()
-        let screenViewBeginTimeFormted  = screenViewBeginTime.timeIntervalSince1970 * 1000
+        let screenViewBeginTimeFormted  = screenViewBeginTime.millisecondsSince1970
         let screeViewDuration           = eachScreen.screeViewDuration ?? 0
         let latitude                    = eachScreen.latitude ?? 0
         let longitude                   = eachScreen.longitude ?? 0
         let location                    = ["latitude":"\(latitude)", "longitude":"\(longitude)"]
         
+        
         //**********old implementation*****
         /*
-        var dataDictionary: [String: Any] = [:]
-        dataDictionary["sourceName"]        = sourceName
-        dataDictionary["previousScreen"]    = previousScreen
-        dataDictionary["timeSpent"]         = "\(screeViewDuration)"
-        dataDictionary["location"]          = location
-        dataDictionary["device"]            = self.deviceInfo()
-        dataDictionary["network"]           = self.networkInfo()
-        
-        let screenViewDictionary: [String: Any] = ["sessionId":self.encodedSessionString ?? "",
-                                                   "eventId":screenViewID,
-                                                   "userId":currentUserID(),
-                                                   "eventType":"ScreenView",
-                                                   "event":"ScreenView",
-                                                   "timestamp":"\(screenViewBeginTimeFormted)" ,
-            "data":dataDictionary]
+         var dataDictionary: [String: Any] = [:]
+         dataDictionary["sourceName"]        = sourceName
+         dataDictionary["previousScreen"]    = previousScreen
+         dataDictionary["timeSpent"]         = "\(screeViewDuration)"
+         dataDictionary["location"]          = location
+         dataDictionary["device"]            = self.deviceInfo()
+         dataDictionary["network"]           = self.networkInfo()
+         
+         let screenViewDictionary: [String: Any] = ["sessionId":self.encodedSessionString ?? "",
+         "eventId":screenViewID,
+         "userId":currentUserID(),
+         "eventType":"ScreenView",
+         "event":"ScreenView",
+         "timestamp":"\(screenViewBeginTimeFormted)" ,
+         "data":dataDictionary]
          */
         
         //**********New Implementation*******
         let screenViewDictionary: [String: Any] = ["sessionId":self.encodedSessionString ?? "",
+                                                   "service":ATTAnalytics.helper.appID ?? "",
                                                    "eventId":screenViewID,
                                                    "userId":currentUserID(),
                                                    "eventType":"ScreenView",
                                                    "event":"ScreenView",
                                                    "timestamp":"\(screenViewBeginTimeFormted)",
-                                                   "sourceName":sourceName,
-                                                   "previousScreen":previousScreen,
-                                                   "timeSpent":"\(screeViewDuration)",
-                                                   "location":location,
-                                                   "device":self.deviceInfo(),
-                                                   "os":self.deviceOSInfo(),
-                                                   "network":self.networkInfo(),
-                                                   "app":self.appInfo(),
-                                                   "lib":self.libInfo()]
-       
+            "timeSpent":"\(screeViewDuration)",
+            "location":location,
+            "device":self.deviceInfo(),
+            "os":self.deviceOSInfo(),
+            "network":self.networkInfo(),
+            "app":self.appInfo(),
+            "lib":self.libInfo()]
+        
         
         return screenViewDictionary
     }
-
-    func createEventSchema(_ eachEvent: ATTEventModel,sorcePageName sourceName: String,previousScreenName previousScreen: String ) -> [String : Any] {
+    
+    func createEventSchema(_ eachEvent: ATTEventModel) -> [String : Any] {
         
         
         let eventType =  eachEvent.eventType ?? ""
@@ -381,7 +378,7 @@ class ATTFlushManager: NSObject {
         //let dURL = (eachEvent.dataURL != nil) ? eachEvent.dataURL : ""
         let screenViewID = eachEvent.screenViewID ?? ""
         let eventStartTime = eachEvent.eventStartTime ?? Date()
-        let eventStartTimeFormated = (eventStartTime.timeIntervalSince1970) * 1000
+        let eventStartTimeFormated = eventStartTime.millisecondsSince1970
         let eventDuration = eachEvent.eventDuration ?? 0
         let latitude =  eachEvent.latitude ?? 0
         let longitude =  eachEvent.longitude ?? 0
@@ -396,24 +393,23 @@ class ATTFlushManager: NSObject {
         
         
         let eventDictionary: [String:Any] = ["sessionId":self.encodedSessionString ?? "",
+                                             "service":ATTAnalytics.helper.appID ?? "",
                                              "eventType":eventType ,
                                              "userId":currentUserID(),
                                              "event":eventName ,
                                              "eventId":screenViewID ,
                                              "timestamp":"\(eventStartTimeFormated)",
-                                             "eventDuration":"\(eventDuration)",
-                                             "sourceName":sourceName,
-                                             "previousScreen":previousScreen,
-                                             "data":eventDataDictionary,
-                                             "location":location,
-                                             "device":self.deviceInfo(),
-                                             "os":self.deviceOSInfo(),
-                                             "network":self.networkInfo(),
-                                             "app":self.appInfo(),
-                                             "lib":self.libInfo()]
+            "eventDuration":"\(eventDuration)",
+            "data":eventDataDictionary,
+            "location":location,
+            "device":self.deviceInfo(),
+            "os":self.deviceOSInfo(),
+            "network":self.networkInfo(),
+            "app":self.appInfo(),
+            "lib":self.libInfo()]
         
         return eventDictionary
-
+        
     }
     func fetchSourceName(_ screenViewModel: ATTScreenViewModel) -> String{
         let screenName = screenViewModel.screenName ?? ""
@@ -435,7 +431,7 @@ class ATTFlushManager: NSObject {
         }
         return previousScreen
     }
-
+    
     func formattedSchemaFromArray(_ screenViewModelArray:[ATTScreenViewModel]) -> [String : Any]? {
         if self.sessionSyncCompleted == false {
             return self.syncableSessionObject() as Dictionary<String, AnyObject>?
@@ -455,10 +451,10 @@ class ATTFlushManager: NSObject {
                 screenEvents = screenEvents + eventDictionaryArray
             }
             
-            // check is need to pass the screen view event with request 
+            // check is need to pass the screen view event with request
             if eachScreen.isNeedToPassScreenViewEvent {
-            let screenViewDictionary  = self.createScreenSchema(eachScreen)
-            screenViews.append(screenViewDictionary)
+                let screenViewDictionary  = self.createScreenSchema(eachScreen)
+                screenViews.append(screenViewDictionary)
             }
         }
         
@@ -468,8 +464,7 @@ class ATTFlushManager: NSObject {
         }
         
         eventsArray = (eventsArray + screenViews + screenEvents)
-        let data = ["appId": ATTAnalytics.helper.appID ?? "",
-                    "events":eventsArray] as [String : Any]
+        let data = ["events":eventsArray] as [String : Any]
         return data
         
     }
@@ -484,8 +479,7 @@ class ATTFlushManager: NSObject {
             eventsArray.append(self.identificationObject())
         }
         
-        let data = ["appId": ATTAnalytics.helper.appID ?? "",
-                    "events":eventsArray] as [String : Any]
+        let data = ["events":eventsArray] as [String : Any]
         
         return data
     }
@@ -498,8 +492,12 @@ class ATTFlushManager: NSObject {
         identificationDictionary["sessionId"]   = self.encodedSessionString
         identificationDictionary["timestamp"]   = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
         identificationDictionary["userId"]      = self.currentUserID()
-        
-        var dataDictionary: [String:Any] = [:]
+        identificationDictionary["service"]      = ATTAnalytics.helper.appID ?? ""
+        identificationDictionary["os"]        = self.deviceOSInfo()
+        identificationDictionary["device"]    = self.deviceInfo()
+        identificationDictionary["network"]   = self.networkInfo()
+        identificationDictionary["app"]       = self.appInfo()
+        identificationDictionary["lib"]       = self.libInfo()
         var userProfile: [String:Any] = [:]
         if let savedUserProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? [String:Any] {
             userProfile = savedUserProfile
@@ -511,73 +509,76 @@ class ATTFlushManager: NSObject {
             userProfile["userStatus"] = "1"
         }
         
-        dataDictionary["user"]      = userProfile
-        dataDictionary["os"]        = self.deviceOSInfo()
-        dataDictionary["device"]    = self.deviceInfo()
-        dataDictionary["network"]   = self.networkInfo()
-        dataDictionary["app"]       = self.appInfo()
-        dataDictionary["lib"]       = self.libInfo()
-        
-        identificationDictionary["data"] = dataDictionary
-        
+        identificationDictionary["data"] = userProfile
         return identificationDictionary
     }
     
     private func appInfo() -> [String:Any] {
-        let dictionary = Bundle.main.infoDictionary
-        let version = dictionary?["CFBundleShortVersionString"]
-        let appName = dictionary?["CFBundleName"]
-        let bundleID = Bundle.main.bundleIdentifier
+        let dictionary      = Bundle.main.infoDictionary
+        let version         = dictionary?["CFBundleShortVersionString"]
+        let appName         = dictionary?["CFBundleName"]
+        let bundleID        = Bundle.main.bundleIdentifier
         
         var appInfoDictionary : [String:Any] = [:]
         
-        appInfoDictionary["version"] = version
-        appInfoDictionary["nameSpace"] = bundleID
-        appInfoDictionary["name"] = appName
-        appInfoDictionary["language"] = ""
-        appInfoDictionary["build"] = ""
-        appInfoDictionary["variant"] = ATTAnalytics.helper.appVariant
-
+        appInfoDictionary["version"]        = version
+        appInfoDictionary["nameSpace"]      = bundleID
+        appInfoDictionary["name"]           = appName
+        appInfoDictionary["language"]       = fetchAppLanguage()
+        appInfoDictionary["build"]          = ""
+        appInfoDictionary["variant"]        = ATTAnalytics.helper.appVariant
+        
         return appInfoDictionary
     }
+    private func fetchAppDefaultLanguage() -> String{
+        guard let languageCode = Locale.current.languageCode else {
+            return ""
+        }
+        return languageCode
+    }
     
+    private func fetchAppLanguage() -> String{
+        guard let appInformationDictionary = ATTAnalytics.helper.appInformationDictionary,let selectedLanguage = appInformationDictionary[ATTAnalytics.kAppLanguage] as? String else {
+            return fetchAppDefaultLanguage()
+        }
+        return selectedLanguage
+    }
     private func sessionInfo() -> [String:Any] {
         var sessionInfoDictionary: [String:Any] = [:]
         
-        sessionInfoDictionary["sessionId"] = self.encodedSessionString
-        sessionInfoDictionary["userId"] = self.currentUserID()
-        sessionInfoDictionary["event"] = "SessionStart"
-        sessionInfoDictionary["eventType"] = "SessionStart"
-        sessionInfoDictionary["timestamp"] = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+        sessionInfoDictionary["sessionId"]  = self.encodedSessionString
+        sessionInfoDictionary["userId"]     = self.currentUserID()
+        sessionInfoDictionary["event"]      = "SessionStart"
+        sessionInfoDictionary["eventType"]  = "SessionStart"
+        sessionInfoDictionary["timestamp"]  = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+        sessionInfoDictionary["service"]      = ATTAnalytics.helper.appID ?? ""
         
         return sessionInfoDictionary
     }
     
     private func libInfo() -> [String:Any] {
-        return ["libVersion":"0.0.1","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
+        return ["version":"0.4.0","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
     }
     
     private func deviceOSInfo() -> [String:Any] {
         var appOSInfoDictionary: [String:Any] = [:]
-        appOSInfoDictionary["os"] = "iOS"
+        appOSInfoDictionary["name"] = "iOS"
         appOSInfoDictionary["version"] = UIDevice.current.systemVersion
         return appOSInfoDictionary
         
     }
-
+    
     private func deviceInfo() -> [String:Any] {
         
         var appInfoDictionary: [String:Any] = [:]
         
-        appInfoDictionary["deviceId"] = UIDevice.current.identifierForVendor?.uuidString
-        appInfoDictionary["os"] = "iOS"
-        appInfoDictionary["type"] = UIDevice.current.modelType
-        appInfoDictionary["version"] = UIDevice.current.systemVersion
-        appInfoDictionary["manufacture"] = "Apple"
-        appInfoDictionary["model"] = UIDevice.current.model
-        appInfoDictionary["name"] = UIDevice.current.name
-        appInfoDictionary["locale"] = NSLocale.current.languageCode
-        appInfoDictionary["resolution"] = "\(UIScreen.main.bounds.size.width) x \(UIScreen.main.bounds.size.height)"
+        appInfoDictionary["deviceId"]       = UIDevice.current.identifierForVendor?.uuidString
+        appInfoDictionary["type"]           = UIDevice.current.modelType
+        appInfoDictionary["manufacture"]    = "Apple"
+        appInfoDictionary["model"]          = UIDevice.current.model
+        appInfoDictionary["name"]           = UIDevice.current.name
+        appInfoDictionary["locale"]         = NSLocale.current.languageCode ?? ""
+        appInfoDictionary["resolution"]     = "\(UIScreen.main.bounds.size.width) x \(UIScreen.main.bounds.size.height)"
         
         return appInfoDictionary
     }
@@ -588,7 +589,7 @@ class ATTFlushManager: NSObject {
         if ATTReachability.reachability.currentReachabilityStatus == .reachableViaWiFi {
             networkInfoDictionary["type"] = "Wifi"
         } else {
-            networkInfoDictionary["type"] = "Cellular"
+            networkInfoDictionary["type"]    = "Cellular"
             networkInfoDictionary["carrier"] = ATTReachability.reachability.carrierName() ?? ""
         }
         
@@ -601,7 +602,7 @@ class ATTFlushManager: NSObject {
         var userID = UserDefaults.standard.object(forKey: "ATTUserID") as? String
         
         if userID == nil || userID == "" {
-            userID = "\(ATTMiddlewareSchemaManager.manager.guestUniqueID())" 
+            userID = "\(ATTMiddlewareSchemaManager.manager.guestUniqueID())"
             userID = self.base64Encoded(string: userID)
             UserDefaults.standard.setValue(userID, forKey: "ATTUserID")
             UserDefaults.standard.setValue("guest", forKey: "ATTUserLoginType")
@@ -632,4 +633,10 @@ public extension UIDevice {
         default:                                        return identifier
         }
     }
+}
+extension Date {
+    var millisecondsSince1970:Int {
+        return Int((self.timeIntervalSince1970 * 1000.0).rounded())
+    }
+    
 }

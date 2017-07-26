@@ -15,22 +15,28 @@ public class ATTAnalytics: NSObject {
     
     // MARK: Public members
     // MARK: Pubclic Constants
-    public static let TrackingNotification = "RegisterForTrakingNotification"
+    public static let TrackingNotification      = "RegisterForTrakingNotification"
     public static let CrashTrackingNotification = "RegisterForCrashTrakingNotification"
-    public static let IdentifyNotification = "IndentifyUser"
-    public static let LoggoutNotification = "loggoutUser"
+    public static let IdentifyNotification      = "IndentifyUser"
+    public static let LoggoutNotification       = "loggoutUser"
+    
+    public static let kAppLanguage              = "language"
+    
     
     // For Objective - C support since the converted framework not supporting swift enums
-    public static let TrackingTypeAuto = "Auto"
-    public static let TrackingTypeManual = "Manual"
+    public static let TrackingTypeAuto          = "Auto"
+    public static let TrackingTypeManual        = "Manual"
     
     public var appID:String?
     public var trackingStateTypes: TrackingTypes?
     public var trackingMethodTypes: TrackingTypes?
-
+    
+    public var appInformationDictionary: [String:Any]?
+    
+    
     public var appVariant = ""
     public var isDebug    = false
-
+    
     // MARK: Enums
     public enum TrackingTypes {
         case Automatic
@@ -81,7 +87,7 @@ public class ATTAnalytics: NSObject {
         self.configParser = nil
         self.configurationFilePath = nil
         self.stateChangeTrackingSelector = nil
-        self.screenViewStart = nil        
+        self.screenViewStart = nil
         self.presentViewControllerName = nil
         NotificationCenter.default.removeObserver(self)
     }
@@ -99,19 +105,20 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               pathForConfigFile:String?,
                               stateTrackingType stateType:TrackingTypes?,
-                              actionTrackingType methodType:TrackingTypes?,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID = appID
-        self.trackingStateTypes = stateType
-        self.trackingMethodTypes = methodType
-        self.appVariant = variant
-        self.isDebug = isfrmaeWorkDebug
-
+                              actionTrackingType methodType:TrackingTypes?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
+        self.appID                         = appID
+        self.trackingStateTypes            = stateType
+        self.trackingMethodTypes           = methodType
+        self.appVariant                    = variant
+        self.isDebug                       = isfrmaeWorkDebug
+        self.appInformationDictionary      = appDictionary
+        
         self.configurationFilePath = pathForConfigFile
         self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
         self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
         self.setupMiddlewareManager()
     }
-
+    
     // Method with configurations as Dictionary
     public func beginTracking(appID:String?, configuration:Dictionary<String, AnyObject>?) -> Void {
         self.beginTracking(appID:appID, configuration:configuration, stateTrackingType:.Manual, actionTrackingType:.Manual)
@@ -120,12 +127,14 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               configuration:Dictionary<String, AnyObject>?,
                               stateTrackingType stateType:TrackingTypes?,
-                              actionTrackingType methodType:TrackingTypes?,appVariant variant: String = "debug",isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID = appID
-        self.appVariant = variant
-        self.isDebug = isfrmaeWorkDebug
-        self.trackingStateTypes = stateType
-        self.trackingMethodTypes = methodType
+                              actionTrackingType methodType:TrackingTypes?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug",isfrmaeWorkDebug: Bool = false) -> Void {
+        self.appID                      = appID
+        self.appVariant                 = variant
+        self.isDebug                    = isfrmaeWorkDebug
+        self.trackingStateTypes         = stateType
+        self.trackingMethodTypes        = methodType
+        self.appInformationDictionary   = appDictionary
+        
         self.createConfigParser(configurations:configuration)
         self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
         self.setupMiddlewareManager()
@@ -136,11 +145,13 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               pathForConfigFile:String?,
                               stateTrackingType stateType:String?,
-                              actionTrackingType methodType:String?,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID = appID
-        self.appVariant = variant
-        self.isDebug = isfrmaeWorkDebug
-        self.configurationFilePath = pathForConfigFile
+                              actionTrackingType methodType:String?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
+        self.appID                      = appID
+        self.appVariant                 = variant
+        self.isDebug                    = isfrmaeWorkDebug
+        self.configurationFilePath      = pathForConfigFile
+        self.appInformationDictionary   = appDictionary
+        
         self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
         self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
         self.setupMiddlewareManager()
@@ -149,11 +160,12 @@ public class ATTAnalytics: NSObject {
     public func beginTracking(appID:String?,
                               configuration:Dictionary<String, AnyObject>?,
                               stateTrackingType stateType:String?,
-                              actionTrackingType methodType:String?,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID = appID
-        self.appVariant = variant
-        self.isDebug = isfrmaeWorkDebug
-
+                              actionTrackingType methodType:String?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
+        self.appID                      = appID
+        self.appVariant                 = variant
+        self.isDebug                    = isfrmaeWorkDebug
+        self.appInformationDictionary   = appDictionary
+        
         self.createConfigParser(configurations:configuration)
         self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
         self.setupMiddlewareManager()
@@ -165,26 +177,26 @@ public class ATTAnalytics: NSObject {
                                     customArguments arguments:Dictionary<String, AnyObject>?,
                                     customEvent event:ATTCustomEvent?) -> Void {
         
-        let configs = self.trackConfigurationForClass(aClass:nil,
-                                                      withSelector:nil,
-                                                      ofStateType:.Event,
-                                                      havingAppSpecificKeyword:keyword,
-                                                      withCustomArguments:arguments)
+        let configuration = self.trackConfigurationForClass(aClass:nil,
+                                                            withSelector:nil,
+                                                            ofStateType:.Event,
+                                                            havingAppSpecificKeyword:keyword,
+                                                            withCustomArguments:arguments)
         var eventArguments = arguments
         var duration:Double = 0.0
-        if event != nil {
-            duration = (event?.duration)!
+        if let eventDuration = event?.duration {
+            duration = eventDuration
         }
         
-        if configs != nil {
-            var customParams = Array<AnyObject>()
-            for eachParam in configs! {
+        if let configuration = configuration {
+            var customParams: [AnyObject] = []
+            for eachParam in configuration {
                 let customParamDict = ["agent":eachParam["agent"] as AnyObject,
                                        "param":eachParam["param"] as AnyObject]
                 customParams.append(customParamDict as AnyObject)
             }
             
-            eventArguments?["analyticEventParams"] = customParams as AnyObject            
+            eventArguments?["analyticEventParams"] = customParams as AnyObject
         }
         
         ATTMiddlewareSchemaManager.manager.createCustomEvent(eventName: keyword,
@@ -220,7 +232,7 @@ public class ATTAnalytics: NSObject {
         NotificationCenter.default.post(name:NSNotification.Name(rawValue:ATTAnalytics.IdentifyNotification),
                                         object:nil)
     }
-
+    
     public func resetUser() -> Void {
         
         UserDefaults.standard.setValue("", forKey: "ATTUserID")
@@ -228,7 +240,7 @@ public class ATTAnalytics: NSObject {
         NotificationCenter.default.post(name:NSNotification.Name(rawValue:ATTAnalytics.LoggoutNotification),
                                         object:nil)
     }
-
+    
     
     /////////////////////////////////////////////////////////////////////////////////////
     // MARK: - Private methods
@@ -260,7 +272,7 @@ public class ATTAnalytics: NSObject {
     }
     
     private func configureSwizzling(stateTracking state:TrackingTypes?,
-                                    methodTracking method:TrackingTypes?) -> Void {        
+                                    methodTracking method:TrackingTypes?) -> Void {
         if state == .Automatic {
             self.swizzileLifecycleMethodImplementation()
         }
@@ -291,19 +303,20 @@ public class ATTAnalytics: NSObject {
     
     // Looping through the configuration to find out the matching paramters and values
     @discardableResult private func trackConfigurationForClass(aClass:AnyClass?,
-                                            withSelector selector:Selector?,
-                                            ofStateType type:StateTypes?,
-                                            havingAppSpecificKeyword keyword:String?,
-                                            withCustomArguments arguments:Dictionary<String, AnyObject>?) -> Array<AnyObject>? {
+                                                               withSelector selector:Selector?,
+                                                               ofStateType type:StateTypes?,
+                                                               havingAppSpecificKeyword keyword:String?,
+                                                               withCustomArguments arguments:Dictionary<String, AnyObject>?) -> [AnyObject]? {
         
         let paramters = self.configurationForClass(aClass:aClass,
                                                    withSelector:selector,
                                                    ofStateType:type,
                                                    havingAppSpecificKeyword:keyword)
         
-        if paramters != nil && (paramters?.count)! > 0 {
+        if let paramterArray = paramters,paramterArray.count > 0 {
             self.registeredAnEvent(configuration:paramters,
                                    customArguments:arguments)
+            
         }
         
         return paramters
@@ -311,14 +324,10 @@ public class ATTAnalytics: NSObject {
     
     // Parsing the Configuration file
     private func configurationDictionary() -> NSDictionary? {
-        let resourcePath = self.configurationFilePath
-        var resourceData:NSDictionary?
-            
-        if resourcePath != nil {
-            resourceData = NSDictionary(contentsOfFile: resourcePath!)
-        } else {
-            print("Could not find the configuration file at the given path!")
+        guard  let resourcePath = self.configurationFilePath else {
+            return nil
         }
+        let resourceData = NSDictionary(contentsOfFile: resourcePath)
         
         return resourceData
     }
@@ -326,7 +335,7 @@ public class ATTAnalytics: NSObject {
     private func configurationForClass(aClass:AnyClass?,
                                        withSelector selector:Selector?,
                                        ofStateType type:StateTypes?,
-                                       havingAppSpecificKeyword keyword:String?) -> Array<AnyObject>? {
+                                       havingAppSpecificKeyword keyword:String?) -> [AnyObject]? {
         var state = ""
         if type == .State {
             state = ATTConfigConstants.AgentKeyTypeState
@@ -334,10 +343,10 @@ public class ATTAnalytics: NSObject {
             state = ATTConfigConstants.AgentKeyTypeEvent
         }
         
-        let resultConfig = (self.configParser?.findConfigurationForClass(aClass:aClass,
-                                                                         withSelector:selector,
-                                                                         ofStateType:state,
-                                                                         havingAppSpecificKeyword:keyword))! as Array<AnyObject>
+        let resultConfig = self.configParser?.findConfigurationForClass(aClass:aClass,
+                                                                        withSelector:selector,
+                                                                        ofStateType:state,
+                                                                        havingAppSpecificKeyword:keyword)
         return resultConfig
     }
     
@@ -345,8 +354,8 @@ public class ATTAnalytics: NSObject {
     private func registeredAnEvent(configuration:Array<AnyObject>?,
                                    customArguments:Dictionary<String, AnyObject>?) -> Void {
         
-        var notificationObject = [String: AnyObject]()
-
+        var notificationObject:[String: AnyObject] = [:]
+        
         notificationObject["configuration"]     = configuration as AnyObject?
         notificationObject["custom_arguments"]  = customArguments as AnyObject?
         notificationObject["app_info"]          = self.appInfo() as AnyObject?
