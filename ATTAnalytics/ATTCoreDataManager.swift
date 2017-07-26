@@ -20,14 +20,16 @@ class ATTCoreDataManager: NSObject {
     
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR DEVELOPMENT PURPOSE ONLY - BEFORE CONVERTING TO FRAMEWORK
+    /*
     lazy var managedObjectModel: NSManagedObjectModel = {
         let modelURL = Bundle.main.url(forResource: "ATTDB", withExtension: "momd")!
         return NSManagedObjectModel(contentsOf: modelURL)!
     }()
+     */
     // MARK: - PersistentStoreCoordinator for below ios 10 support
     // WARNING!!!
     // USE THE BELOW MANAGEDOBJECTMODEL FOR PRODUCTION PURPOSE ONLY - AFTER CONVERTING TO FRAMEWORK
-    /*
+    
      lazy var managedObjectModel: NSManagedObjectModel = {
      let bundlePath = Bundle.main.path(forResource: "ATTBackends", ofType: "bundle")
      let bundle = Bundle(path: bundlePath!)
@@ -35,7 +37,7 @@ class ATTCoreDataManager: NSObject {
      let modelURL = URL(fileURLWithPath: modelPath!)
      return NSManagedObjectModel(contentsOf: modelURL)!
      }()
-     */
+    
     
     lazy var persistentStoreCoordinator: NSPersistentStoreCoordinator = {
         let coordinator = NSPersistentStoreCoordinator(managedObjectModel:self.managedObjectModel)
