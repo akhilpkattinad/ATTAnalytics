@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		39059C5B1F29A6DC00A168CF /* ATTDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */; };
+		39059C5C1F29A6DC00A168CF /* ATTDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */; };
 		39A330771F0629DB00987C8E /* ATTFlushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A330761F0629DB00987C8E /* ATTFlushManager.swift */; };
 		F91A30D11E8554B800FCF7BB /* ATTReachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91A30D01E8554B800FCF7BB /* ATTReachability.swift */; };
 		F91A30D31E8554C800FCF7BB /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F91A30D21E8554C800FCF7BB /* SystemConfiguration.framework */; };
@@ -17,7 +19,6 @@
 		F927956C1E1F6AB500C7B0EA /* ATTConfigParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = F92795681E1F6AB500C7B0EA /* ATTConfigParser.swift */; };
 		F9664B2A1E5560DA00189300 /* ATTCoreDataManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1D1E5560DA00189300 /* ATTCoreDataManager.swift */; };
 		F9664B2B1E5560DA00189300 /* ATTCustomEvent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1E1E5560DA00189300 /* ATTCustomEvent.swift */; };
-		F9664B2C1E5560DA00189300 /* ATTDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */; };
 		F9664B2D1E5560DA00189300 /* ATTEventModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9664B211E5560DA00189300 /* ATTEventModel.swift */; };
 		F9664B2F1E5560DA00189300 /* ATTLocationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9664B231E5560DA00189300 /* ATTLocationManager.swift */; };
 		F9664B301E5560DA00189300 /* ATTMiddlewareSchemaManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9664B241E5560DA00189300 /* ATTMiddlewareSchemaManager.swift */; };
@@ -28,7 +29,6 @@
 		F9664B351E5560DA00189300 /* ContainerResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9664B291E5560DA00189300 /* ContainerResponse.swift */; };
 		F9664B371E5560FB00189300 /* CoreData.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F9664B361E5560FB00189300 /* CoreData.framework */; };
 		F97ECECE1E2F811A0089038F /* CoreLocation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F97ECECD1E2F811A0089038F /* CoreLocation.framework */; };
-		F9C4C5061E56C75E00131516 /* ATTDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -262,7 +262,7 @@
 				39A330771F0629DB00987C8E /* ATTFlushManager.swift in Sources */,
 				F927956B1E1F6AB500C7B0EA /* ATTConfigConstants.swift in Sources */,
 				F9664B2A1E5560DA00189300 /* ATTCoreDataManager.swift in Sources */,
-				F9664B2C1E5560DA00189300 /* ATTDB.xcdatamodeld in Sources */,
+				39059C5B1F29A6DC00A168CF /* ATTDB.xcdatamodeld in Sources */,
 				F9664B2F1E5560DA00189300 /* ATTLocationManager.swift in Sources */,
 				F91A30D11E8554B800FCF7BB /* ATTReachability.swift in Sources */,
 				F927956C1E1F6AB500C7B0EA /* ATTConfigParser.swift in Sources */,
@@ -276,7 +276,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F9C4C5061E56C75E00131516 /* ATTDB.xcdatamodeld in Sources */,
+				39059C5C1F29A6DC00A168CF /* ATTDB.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
