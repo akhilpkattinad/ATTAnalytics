@@ -68,6 +68,7 @@ class ATTCoreDataManager: NSObject {
     // MARK: - Persistent container for above ios 10 support
     // ABOVE IOS 10
     /// THIS STACK IS ONLY BE USED FOR DEVELOPMENT PURPOSE BEFORE CONVERTING TO FRAMEWORK
+    /*
     @available(iOS 10.0, *)
     lazy var persistentContainer: NSPersistentContainer = {
         let container = NSPersistentContainer(name: "ATTDB")
@@ -78,14 +79,14 @@ class ATTCoreDataManager: NSObject {
         })
         return container
     }()
-    
+    */
     
     /// WARNING!!!
     /////////// REPLACE THE ABOVE CODE WITH THE BELOW GIVEN CODE WHEN CONVERTING TO FRAMEWORK/////
     ///// CREATE A BUNDLE TARGET AND ADD THE .XCDATAMODELLD FILE AS COMPILE SOURCE//////
     ///// HOST PROJECT MUST INCLUDE THE .BUNDLE ALSO///////
     
-    /*
+    
      // MARK: - Core Data stack
      @available(iOS 10.0, *)
      lazy var persistentContainer: NSPersistentContainer = {
@@ -97,7 +98,7 @@ class ATTCoreDataManager: NSObject {
      })
      return container
      }()
-     */
+     
     
     func currentContext() -> NSManagedObjectContext {
         var managedContext:NSManagedObjectContext!
