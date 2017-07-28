@@ -177,34 +177,31 @@ public class ATTAnalytics: NSObject {
                                     customArguments arguments:Dictionary<String, AnyObject>?,
                                     customEvent event:ATTCustomEvent?) -> Void {
         
+        let configuration = self.trackConfigurationForClass(aClass:nil,
+                                                            withSelector:nil,
+                                                            ofStateType:.Event,
+                                                            havingAppSpecificKeyword:keyword,
+                                                            withCustomArguments:arguments)
+        var eventArguments = arguments
         var duration:Double = 0.0
         if let eventDuration = event?.duration {
             duration = eventDuration
         }
-        //Old
-        /*
-         let configuration = self.trackConfigurationForClass(aClass:nil,
-         withSelector:nil,
-         ofStateType:.Event,
-         havingAppSpecificKeyword:keyword,
-         withCustomArguments:arguments)
-         
-         var eventArguments = arguments
-         
-         if let configuration = configuration {
-         var customParams: [AnyObject] = []
-         for eachParam in configuration {
-         let customParamDict = ["agent":eachParam["agent"] as AnyObject,
-         "param":eachParam["param"] as AnyObject]
-         customParams.append(customParamDict as AnyObject)
-         }
-         
-         // eventArguments?["analyticEventParams"] = customParams as AnyObject
-         }*/
+        
+        if let configuration = configuration {
+            var customParams: [AnyObject] = []
+            for eachParam in configuration {
+                let customParamDict = ["agent":eachParam["agent"] as AnyObject,
+                                       "param":eachParam["param"] as AnyObject]
+                customParams.append(customParamDict as AnyObject)
+            }
+            
+            eventArguments?["analyticEventParams"] = customParams as AnyObject
+        }
         
         ATTMiddlewareSchemaManager.manager.createCustomEvent(eventName: keyword,
                                                              eventStartTime: Date(),
-                                                             customArguments: arguments,
+                                                             customArguments: eventArguments,
                                                              eventDuration: duration)
     }
     

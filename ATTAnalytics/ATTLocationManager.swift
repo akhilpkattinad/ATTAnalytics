@@ -25,7 +25,7 @@ class ATTLocationManager: NSObject {
         super.init()
         self.locationManager = CLLocationManager()
         self.locationManager?.delegate = self
-        self.locationManager?.requestWhenInUseAuthorization()
+        self.locationManager?.requestAlwaysAuthorization()
         self.locationManager?.startUpdatingLocation()
     }
 }
