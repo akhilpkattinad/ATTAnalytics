@@ -368,6 +368,7 @@ class ATTFlushManager: NSObject {
         return screenViewDictionary
     }
     
+    
     func createEventSchema(_ eachEvent: ATTEventModel) -> [String : Any] {
         
         
@@ -434,7 +435,7 @@ class ATTFlushManager: NSObject {
     
     func formattedSchemaFromArray(_ screenViewModelArray:[ATTScreenViewModel]) -> [String : Any]? {
         if self.sessionSyncCompleted == false {
-            return self.syncableSessionObject() as Dictionary<String, AnyObject>?
+            return self.syncableSessionObject()
         }
         let eventCount =  screenViewModelArray.count
         if eventCount <= 0 {
@@ -492,12 +493,15 @@ class ATTFlushManager: NSObject {
         identificationDictionary["sessionId"]   = self.encodedSessionString
         identificationDictionary["timestamp"]   = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
         identificationDictionary["userId"]      = self.currentUserID()
-        identificationDictionary["service"]      = ATTAnalytics.helper.appID ?? ""
-        identificationDictionary["os"]        = self.deviceOSInfo()
-        identificationDictionary["device"]    = self.deviceInfo()
-        identificationDictionary["network"]   = self.networkInfo()
-        identificationDictionary["app"]       = self.appInfo()
-        identificationDictionary["lib"]       = self.libInfo()
+        identificationDictionary["service"]     = ATTAnalytics.helper.appID ?? ""
+        identificationDictionary["os"]          = self.deviceOSInfo()
+        identificationDictionary["device"]      = self.deviceInfo()
+        identificationDictionary["network"]     = self.networkInfo()
+        identificationDictionary["app"]         = self.appInfo()
+        identificationDictionary["lib"]         = self.libInfo()
+        identificationDictionary["location"]    = self.locationInfo()
+        
+        
         var userProfile: [String:Any] = [:]
         if let savedUserProfile = UserDefaults.standard.object(forKey: "ATTUserProfile") as? [String:Any] {
             userProfile = savedUserProfile
@@ -511,6 +515,13 @@ class ATTFlushManager: NSObject {
         
         identificationDictionary["data"] = userProfile
         return identificationDictionary
+    }
+    private func locationInfo() -> [String:Any] {
+        let latitude =  ATTMiddlewareSchemaManager.manager.locationManager?.latitude  ?? 0
+        let longitude = ATTMiddlewareSchemaManager.manager.locationManager?.longitude ?? 0
+        
+        let location = ["latitude":"\(latitude)", "longitude":"\(longitude)"]
+        return location
     }
     
     private func appInfo() -> [String:Any] {
@@ -552,12 +563,18 @@ class ATTFlushManager: NSObject {
         sessionInfoDictionary["eventType"]  = "SessionStart"
         sessionInfoDictionary["timestamp"]  = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
         sessionInfoDictionary["service"]      = ATTAnalytics.helper.appID ?? ""
+        sessionInfoDictionary["os"]        = self.deviceOSInfo()
+        sessionInfoDictionary["device"]    = self.deviceInfo()
+        sessionInfoDictionary["network"]   = self.networkInfo()
+        sessionInfoDictionary["app"]       = self.appInfo()
+        sessionInfoDictionary["lib"]       = self.libInfo()
+        sessionInfoDictionary["location"]  = self.locationInfo()
         
         return sessionInfoDictionary
     }
     
     private func libInfo() -> [String:Any] {
-        return ["version":"0.4.0","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
+        return ["version":"0.8.0","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
     }
     
     private func deviceOSInfo() -> [String:Any] {
