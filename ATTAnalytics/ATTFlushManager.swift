@@ -574,7 +574,7 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> [String:Any] {
-        return ["version":"0.4.0","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
+        return ["version":"0.9.0","variant":ATTAnalytics.helper.isDebug ? "debug":"release"]
     }
     
     private func deviceOSInfo() -> [String:Any] {

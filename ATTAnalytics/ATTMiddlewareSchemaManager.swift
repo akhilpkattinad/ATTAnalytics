@@ -80,6 +80,8 @@ class ATTMiddlewareSchemaManager: NSObject {
     func applicationDidFinishedLaunching() -> Void {
         self.appLaunched = true
         self.flushManager?.resetIdentification()
+        self.createSession()
+
     }
     
     func applicationDidEnterBackground() -> Void {
@@ -87,7 +89,7 @@ class ATTMiddlewareSchemaManager: NSObject {
     }
     
     func applicationDidBecomeActive() -> Void {
-        self.createSession()
+        /*
         if self.appLaunched == false {
             self.startNewScreenViewWithScreenID(screenViewID: self.newUniqueID(),
                                                 screenName: self.lastViewedScreen,
@@ -98,6 +100,7 @@ class ATTMiddlewareSchemaManager: NSObject {
                                                 screenViewBeginAt: Date())
             self.appLaunched = false
         }
+ */
     }
     
     // Session management
