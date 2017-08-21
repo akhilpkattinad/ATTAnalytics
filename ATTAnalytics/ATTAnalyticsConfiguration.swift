@@ -62,7 +62,7 @@ public class ATTAnalyticsConfiguration: NSObject {
     /// Custom initialise
     ///
     /// - Parameter applicationID: application ID
-    init(_ applicationID: String) {
+    public init(_ applicationID: String) {
         super.init()
         appID = applicationID
     }

@@ -211,6 +211,10 @@ SWIFT_CLASS_PROPERTY(@property (nonatomic, class, readonly, copy) NSString * _No
 @property (nonatomic, copy) NSDictionary<NSString *, id> * _Nullable appConfigurationDictionary;
 /// isfrmaeWorkDebug: Bool parameter.Default will be false
 @property (nonatomic) BOOL isDebugFrameWork;
+/// Custom initialise
+/// \param applicationID application ID
+///
+- (nonnull instancetype)init:(NSString * _Nonnull)applicationID OBJC_DESIGNATED_INITIALIZER;
 - (nonnull instancetype)init SWIFT_UNAVAILABLE;
 @end
 
