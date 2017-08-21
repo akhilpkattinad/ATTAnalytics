@@ -50,8 +50,10 @@ class Container: NSObject {
     
     // MARK: Public methods
     // MARK: For HTTP METHOD GET
-    @discardableResult func get(containerRequest:ContainerRequest?, onCompletion:completionHandler?) -> String {
-        let urlRequest = self.formulateRequestFromContainerRequest(containerRequest: containerRequest)
+    @discardableResult func get(containerRequest:ContainerRequest?, onCompletion:completionHandler?) -> String? {
+        guard let containerRequest = containerRequest,let urlRequest = self.formulateRequestFromContainerRequest(containerRequest: containerRequest) else{
+            return nil
+        }
         
         urlRequest.httpMethod = self.stringConvertedRequestMethod(method:.Get)
         
@@ -59,8 +61,8 @@ class Container: NSObject {
         let operationID = self.timeStamp
         let operation = ContainerOperation(request: urlRequest,
                                            operationID: operationID,
-                                           priority: containerRequest?.priority,
-                                           cachePolicy: containerRequest!.cachingPolicy,
+                                           priority: containerRequest.priority,
+                                           cachePolicy: containerRequest.cachingPolicy,
                                            delegate: self)
         
         self.operationQueue?.addOperation(operation)
@@ -68,26 +70,41 @@ class Container: NSObject {
     }
     
     // MARK: For HTTP METHOD POST
-    @discardableResult func post(containerRequest:ContainerRequest?, onCompletion:completionHandler?) -> String {
-        let urlRequest = self.formulateRequestFromContainerRequest(containerRequest: containerRequest)
+    @discardableResult func post(containerRequest:ContainerRequest?, onCompletion:completionHandler?) -> String? {
+        
+        guard let containerRequest = containerRequest,
+            let urlRequest = self.formulateRequestFromContainerRequest(containerRequest: containerRequest),
+            let requestParams = containerRequest.requestParams,
+            let data = fetchJSONSerializedData(requestParams) else{
+            return nil
+        }
         
         urlRequest.httpMethod = self.stringConvertedRequestMethod(method:.Post)
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        urlRequest.httpBody = data
         
-        let data = try? JSONSerialization.data(withJSONObject: (containerRequest?.requestParams)!, options: [])
-        urlRequest.httpBody = data!
-        let jsonString = NSString(data: data!, encoding: String.Encoding.utf8.rawValue)! as String
-        print(" Syncable Data: \(jsonString)")
+        if let jsonString = NSString(data: data, encoding: String.Encoding.utf8.rawValue) as String?{
+            print(" Syncable Data: \(jsonString)")
+        }
         self.completion = onCompletion
         let operationID = self.timeStamp
         let operation = ContainerOperation(request: urlRequest,
                                            operationID: operationID,
-                                           priority: containerRequest?.priority,
-                                           cachePolicy: containerRequest!.cachingPolicy,
+                                           priority: containerRequest.priority,
+                                           cachePolicy: containerRequest.cachingPolicy,
                                            delegate: self)
         
         self.operationQueue?.addOperation(operation)
         return operationID
+    }
+    
+    func fetchJSONSerializedData(_ dataToConvert: Any) -> Data? {
+        do {
+            let data = try JSONSerialization.data(withJSONObject:dataToConvert, options: [])
+            return data
+        } catch  {
+            return nil
+        }
     }
     
     // MARK: Lifecycles for Cancel, Suspend and Resume
@@ -117,8 +134,11 @@ class Container: NSObject {
     }
     
     private func findOperationWithID(operationID:String?) -> ContainerOperation? {
-        let allOperations = self.operationQueue?.operations
-        let filteredArray = allOperations!.filter { _ in operationID == operationID! }
+        guard let operationID = operationID,let allOperations = self.operationQueue?.operations  else {
+            return nil
+        }
+        
+        let filteredArray = allOperations.filter { _ in operationID == operationID }
         if filteredArray.count > 0 {
             return filteredArray.first as? ContainerOperation
         }
@@ -126,14 +146,24 @@ class Container: NSObject {
         return nil
     }
     
-    private func formulateRequestFromContainerRequest(containerRequest:ContainerRequest?) -> NSMutableURLRequest {
+    private func formulateRequestFromContainerRequest(containerRequest:ContainerRequest?) -> NSMutableURLRequest? {
         
-        let apiBaseURL = ATTAnalytics.helper.isDebug ? debugBaseURL : baseURL
-        let theRequestURLString = apiBaseURL.appending((containerRequest?.requestURL)!)
-        let theRequestURL = URL(string: theRequestURLString)
-        let urlRequest = NSMutableURLRequest(url: theRequestURL!)
-        
-        return urlRequest
+        var theRequestURLString: String!
+        if let newServerURL = ATTAnalytics.helper.analyticsConfiguration.serverURL {
+            theRequestURLString = newServerURL
+        }else{
+            theRequestURLString = ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? debugBaseURL : baseURL
+        }
+
+        if let requestURL = containerRequest?.requestURL {
+            theRequestURLString = theRequestURLString.appending(requestURL)
+        }
+        if let theRequestURL = URL(string: theRequestURLString){
+            let urlRequest = NSMutableURLRequest(url: theRequestURL)
+            return urlRequest
+        }
+        return nil
+      
     }
 }
 
@@ -141,7 +171,9 @@ class Container: NSObject {
 extension Container : ContainerOperationDelegate {
     func completedOperationWithResponse(response:ContainerResponse?, operationID:String?) {
         DispatchQueue.main.async {
-            self.completion!(response)
+            if let completionBlock = self.completion {
+                completionBlock(response)
+            }
         }
     }
 }

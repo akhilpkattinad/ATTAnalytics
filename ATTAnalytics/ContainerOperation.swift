@@ -59,7 +59,7 @@ class ContainerOperation:Operation {
             if priority == .VeryHigh {
                 self.queuePriority = .veryHigh
             }
-        }       
+        }
         
         self.dataTask(request: request!, onCompletion: {(response:ContainerResponse?) -> Void in
             self.delegate?.completedOperationWithResponse(response: response, operationID: self.operationID)
@@ -83,7 +83,7 @@ class ContainerOperation:Operation {
     // MARK: End point of call
     private func dataTask(request: NSMutableURLRequest, onCompletion:completionHandler?) -> Void {
         let configuration:URLSessionConfiguration = URLSessionConfiguration.default
-        var hasCachedData:Bool = false
+        var hasCachedData = false
         
         if self.cachingPolicy == .DefaultCaching {
             configuration.requestCachePolicy = NSURLRequest.CachePolicy.returnCacheDataElseLoad
@@ -96,14 +96,17 @@ class ContainerOperation:Operation {
         if self.cachingPolicy == .InMemoryCaching {
             configuration.requestCachePolicy = NSURLRequest.CachePolicy.reloadIgnoringLocalCacheData
             
-            if let data = self.cachedData(dataSourcePath: request.url!.absoluteString) {
-                let responseDictionary = self.dictionaryFromData(responseData: data) as? Dictionary<String, AnyObject>
+            if let urlPathString = request.url?.absoluteString ,let data = self.cachedData(dataSourcePath: urlPathString) {
+                let responseDictionary = self.dictionaryFromData(responseData: data as Data) as? [String: AnyObject]
                 let response = ContainerResponse(parsedResponse: responseDictionary,
                                                  error: nil,
                                                  response: nil)
                 
                 hasCachedData = true
-                onCompletion!(response)
+                if let onCompletion = onCompletion{
+                    onCompletion(response)
+                    
+                }
             }
         }
         
@@ -114,18 +117,22 @@ class ContainerOperation:Operation {
                     self.cacheData(data: responseData as NSData?, dataSourcePath: request.url?.absoluteString)
                 }
                 
-                let jsonString = NSString(data: responseData, encoding: String.Encoding.utf8.rawValue)! as String
-                print(" Synced Data: \(jsonString)")
+                //                let jsonString = NSString(data: responseData, encoding: String.Encoding.utf8.rawValue)! as String
+                //                print(" Synced Data: \(jsonString)")
                 
-                let responseDictionary = self.dictionaryFromData(responseData: responseData as NSData?) as? Dictionary<String, AnyObject>
+                let responseDictionary = self.dictionaryFromData(responseData: responseData ) as? [String:AnyObject]
                 
                 let response = ContainerResponse(parsedResponse: responseDictionary,
                                                  error: error as Error?,
                                                  response: httpResponse)
                 
-                if self.cachingPolicy != .InMemoryCaching {onCompletion!(response)}
+                if self.cachingPolicy != .InMemoryCaching {
+                    onCompletion!(response)
+                }
                 else {
-                    if hasCachedData == false {onCompletion!(response)}
+                    if hasCachedData == false {
+                        onCompletion!(response)
+                    }
                 }
             } else {
                 let response = ContainerResponse(parsedResponse: nil,
@@ -138,14 +145,13 @@ class ContainerOperation:Operation {
         self.resumeOperation()
     }
     
-    private func dictionaryFromData(responseData:NSData?) -> NSDictionary? {
-        let parsedDictionary = try? JSONSerialization.jsonObject(with: responseData! as Data, options: [])
-        var responseDictionary:Dictionary<String, AnyObject>?
-        
-        if parsedDictionary is Array<AnyObject> {
-            responseDictionary = ["root": parsedDictionary! as AnyObject]
+    private func dictionaryFromData(responseData:Data) -> NSDictionary? {
+        let parsedDictionary = try? JSONSerialization.jsonObject(with: responseData, options: [])
+        var responseDictionary: [String:AnyObject]?
+        if let dictionary = parsedDictionary as? [AnyObject] {
+            responseDictionary = ["root": dictionary as AnyObject]
         } else {
-            responseDictionary = parsedDictionary as? Dictionary<String, AnyObject>
+            responseDictionary = parsedDictionary as? [String:AnyObject]
         }
         
         return responseDictionary as NSDictionary?
@@ -154,16 +160,16 @@ class ContainerOperation:Operation {
     // MARK: In Memory caching methods
     // Caching the data
     private func cacheData(data:NSData?, dataSourcePath:String?) -> Void {
-        let documentPath = self.documentDirectoryPath(dataSourcePath: dataSourcePath)
-        if let data = data {
-            _ = try? data.write(toFile: documentPath!, options: [])
+        
+        if let data = data,let documentPath = self.documentDirectoryPath(dataSourcePath: dataSourcePath) {
+            _ = try? data.write(toFile: documentPath, options: [])
         }
     }
     
     // Fetching the cached data
     private func cachedData(dataSourcePath:String?) -> NSData? {
-        let documentPath = self.documentDirectoryPath(dataSourcePath: dataSourcePath)
-        if let data = NSData(contentsOfFile: documentPath!) {
+        
+        if let documentPath = self.documentDirectoryPath(dataSourcePath: dataSourcePath),let data = NSData(contentsOfFile: documentPath) {
             return data
         }
         

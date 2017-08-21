@@ -11,7 +11,7 @@ import UIKit
 
 class ATTConfigParser: NSObject {
     // MARK: - Private members
-    var configurations:Dictionary<String, AnyObject>?
+    var configurations:[String: Any]?
     
     // MARK: - deinit
     deinit {
@@ -21,72 +21,86 @@ class ATTConfigParser: NSObject {
     override init() {
         super.init()
     }
-    
-    convenience init(configurations:Dictionary<String, AnyObject>?) {
+    convenience init(configurations:[String: Any]?) {
         self.init()
         self.configurations = configurations
     }
     
     // MARK: - Public methods
+    
+    /// Find configuration for class
+    ///
+    /// - Parameters:
+    ///   - aClass: aClass
+    ///   - selector: selector
+    ///   - type: type description
+    ///   - keyword: keyword description
+    /// - Returns: return value description
     func findConfigurationForClass(aClass:AnyClass?,
                                    withSelector selector:Selector?,
                                    ofStateType type:String?,
                                    havingAppSpecificKeyword keyword:String?) -> [AnyObject]? {
-    
+        
+        guard let analyticsConfigurations = self.configurations,let root = analyticsConfigurations[ATTConfigConstants.Analytics] as? [AnyObject] else {
+            return nil
+        }
+        
         var resultArray: [AnyObject] = []
-        if self.configurations != nil {
-            let root:Array? = self.configurations![ATTConfigConstants.Analytics] as? Array<AnyObject>
-            if root != nil {
-                for eachAgent in root! {
-                    let agentEnabled:Bool = eachAgent[ATTConfigConstants.AgentEnabled] as! Bool
-                    if agentEnabled == true {
-                        let dataField:Array? = eachAgent[ATTConfigConstants.AgentDataField] as? Array<AnyObject>
-                        var resultConfig:Dictionary<String, AnyObject>?
-                        
-                        if type == ATTConfigConstants.AgentKeyTypeState {
-                            resultConfig = self.stateConfigFromDataField(dataField:dataField,
-                                                                         agent:eachAgent as? Dictionary<String, AnyObject>,
-                                                                         aClass:aClass,
-                                                                         selector:selector,
-                                                                         appSpecificKeyword:keyword)
-                        } else {
-                            resultConfig = self.eventConfigFromDataField(dataField:dataField,
-                                                                         agent:eachAgent as? Dictionary<String, AnyObject>,
-                                                                         aClass:aClass,
-                                                                         selector:selector,
-                                                                         appSpecificKeyword:keyword)
-                        }
-                        
-                        if resultConfig != nil && resultConfig!.count > 0 {
-                            resultArray.append(resultConfig as AnyObject)
-                        }
-                    }
+        for eachAgent in root {
+            if let agentEnabled = eachAgent[ATTConfigConstants.AgentEnabled] as? Bool,  agentEnabled == true,let dataField = eachAgent[ATTConfigConstants.AgentDataField] as? [AnyObject] {
+                
+                var resultConfig:[String:AnyObject]?
+                
+                if type == ATTConfigConstants.AgentKeyTypeState {
+                    resultConfig = self.stateConfigFromDataField(dataFieldArray:dataField,
+                                                                 agent:eachAgent as? [String: AnyObject],
+                                                                 aClass:aClass,
+                                                                 selector:selector,
+                                                                 appSpecificKeyword:keyword)
+                } else {
+                    resultConfig = self.eventConfigFromDataField(dataFieldArray:dataField,
+                                                                 agent:eachAgent as? [String: AnyObject],
+                                                                 aClass:aClass,
+                                                                 selector:selector,
+                                                                 appSpecificKeyword:keyword)
+                }
+                
+                if let resultConfig = resultConfig, resultConfig.count > 0 {
+                    resultArray.append(resultConfig as AnyObject)
                 }
             }
+            
+            
         }
         
         return resultArray
     }
     
     // MARK: - Private methods
-    // Filtering state change configurations
-    private func stateConfigFromDataField(dataField:Array<AnyObject>?,
-                                          agent:Dictionary<String, AnyObject>?,
+    
+    /// Filtering state change configurations
+    ///
+    /// - Parameters:
+    ///   - dataFieldArray: dataFieldArray
+    ///   - agent: agent description
+    ///   - aClass: aClass description
+    ///   - selector: selector description
+    ///   - appSpecificKeyword: appSpecificKeyword description
+    /// - Returns: return value description
+    private func stateConfigFromDataField(dataFieldArray:[AnyObject],
+                                          agent:[String:AnyObject]?,
                                           aClass:AnyClass?,
                                           selector:Selector?,
-                                          appSpecificKeyword:String?) -> Dictionary<String, AnyObject>? {
+                                          appSpecificKeyword:String?) -> [String:AnyObject]? {
         
-        var resultConfig = Dictionary<String, AnyObject>()
-        
-        for eachData in dataField! {
-            let appSpecificClass = eachData[ATTConfigConstants.AppSpecificClass] as? String
-            let keyType:String = eachData[ATTConfigConstants.AgentKeyType] as! String
+        var resultConfig: [String:AnyObject] = [:]
+        for eachData in dataFieldArray {
             
-            if keyType == ATTConfigConstants.AgentKeyTypeState {
-                if appSpecificClass != nil && aClass != nil && appSpecificClass == "\(aClass!)" {
+            if let keyType = eachData[ATTConfigConstants.AgentKeyType] as? String,keyType == ATTConfigConstants.AgentKeyTypeState {
+                if let appSpecificClass    = eachData[ATTConfigConstants.AppSpecificClass] as? String,let aClass = aClass , appSpecificClass == "\(aClass)" {
                     let result = self.appendAgentDetails(agent:agent,
                                                          dataField:eachData as? Dictionary<String, AnyObject>)
-                    resultConfig = result!
+                    resultConfig = result
                     break
                 }
             }
@@ -95,65 +109,74 @@ class ATTConfigParser: NSObject {
         return resultConfig
     }
     
-    // Filtering event configurations
-    private func eventConfigFromDataField(dataField:Array<AnyObject>?,
-                                          agent:Dictionary<String, AnyObject>?,
+    
+    ///  Filtering event configurations
+    ///
+    /// - Parameters:
+    ///   - dataFieldArray: dataFieldArray description
+    ///   - agent: agent description
+    ///   - aClass: aClass description
+    ///   - selector: selector description
+    ///   - appSpecificKeyword: appSpecificKeyword description
+    /// - Returns: return value description
+    private func eventConfigFromDataField(dataFieldArray:[AnyObject],
+                                          agent:[String:AnyObject]?,
                                           aClass:AnyClass?,
                                           selector:Selector?,
-                                          appSpecificKeyword:String?) -> Dictionary<String, AnyObject>? {
+                                          appSpecificKeyword:String?) -> [String:AnyObject]? {
         
-        var resultConfig:Dictionary<String, AnyObject>?
+        var resultConfiguration: [String:AnyObject]?
         
-        for eachData in dataField! {
-            let appSpecificClass = eachData[ATTConfigConstants.AppSpecificClass] as? String
-            let appSpecificMethod = eachData[ATTConfigConstants.AppSpecificMethod] as? String
-            let keyType:String = eachData[ATTConfigConstants.AgentKeyType] as! String
-            let appSpecificKey = eachData[ATTConfigConstants.AppSpecificKey] as? String
-            
-            if keyType == ATTConfigConstants.AgentKeyTypeEvent {
-                if appSpecificClass != nil
-                    && appSpecificMethod != nil
-                    && aClass != nil
-                    && selector != nil
-                    && appSpecificClass == "\(aClass!)"
-                    && appSpecificMethod == "\(selector!)"{
-                    
+        for eachData in dataFieldArray {
+            if let keyType = eachData[ATTConfigConstants.AgentKeyType] as? String, keyType == ATTConfigConstants.AgentKeyTypeEvent    {
+                if let appSpecificClass = eachData[ATTConfigConstants.AppSpecificClass] as? String,let appSpecificMethod = eachData[ATTConfigConstants.AppSpecificMethod] as? String,let aClass = aClass,let selector = selector,appSpecificClass == "\(aClass)",appSpecificMethod == "\(selector)" {
                     let result = self.appendAgentDetails(agent:agent,
                                                          dataField:eachData as? Dictionary<String, AnyObject>)
-                    resultConfig = result!
+                    resultConfiguration = result
                     break
-                    
-                } else {
-                    if appSpecificKey != nil && appSpecificKey == appSpecificKeyword {
+                }
+                else {
+                    if  let appSpecificKey = eachData[ATTConfigConstants.AppSpecificKey] as? String , appSpecificKey == appSpecificKeyword {
                         let result = self.appendAgentDetails(agent:agent,
-                                                             dataField:eachData as? Dictionary<String, AnyObject>)
-                        resultConfig = result!
+                                                             dataField:eachData as? [String:AnyObject])
+                        resultConfiguration = result
                         break
                     }
                 }
             }
         }
         
-        return resultConfig
+        return resultConfiguration
     }
     
-    private func appendAgentDetails(agent:Dictionary<String, AnyObject>?,
-                                    dataField:Dictionary<String, AnyObject>?) -> Dictionary<String, AnyObject>? {
-        var resultDict = Dictionary<String, AnyObject>()
+    /// Description
+    ///
+    /// - Parameters:
+    ///   - agent: agent description
+    ///   - dataField: dataField description
+    /// - Returns: return value description
+    private func appendAgentDetails(agent:[String:AnyObject]?,
+                                    dataField:[String:AnyObject]?) -> [String:AnyObject] {
         
-        resultDict[ATTConfigConstants.AgentName]            = agent?[ATTConfigConstants.AgentName]
-        resultDict[ATTConfigConstants.AgentType]            = agent?[ATTConfigConstants.AgentType]
-        resultDict[ATTConfigConstants.AgentURL]             = agent?[ATTConfigConstants.AgentURL]
-        resultDict[ATTConfigConstants.AgentFlushInterval]   = agent?[ATTConfigConstants.AgentFlushInterval]
-        resultDict[ATTConfigConstants.AgentPostToURL]       = agent?[ATTConfigConstants.AgentPostToURL]
-        resultDict[ATTConfigConstants.AgentEnabled]         = agent?[ATTConfigConstants.AgentEnabled]
-        resultDict[ATTConfigConstants.AgentKey]             = dataField?[ATTConfigConstants.AgentKey]
-        resultDict[ATTConfigConstants.AgentKeyType]         = dataField?[ATTConfigConstants.AgentKeyType]
-        resultDict[ATTConfigConstants.AppSpecificMethod]    = dataField?[ATTConfigConstants.AppSpecificMethod]
-        resultDict[ATTConfigConstants.AppSpecificClass]     = dataField?[ATTConfigConstants.AppSpecificClass]
-        resultDict[ATTConfigConstants.AppSpecificKey]       = dataField?[ATTConfigConstants.AppSpecificKey]
-        resultDict[ATTConfigConstants.AgentParam]           = dataField?[ATTConfigConstants.AgentParam]
+        var resultDictionary: [String:AnyObject] = [:]
         
-        return resultDict
+        if let agentDictionary = agent {
+            resultDictionary[ATTConfigConstants.AgentName]            = agentDictionary[ATTConfigConstants.AgentName]
+            resultDictionary[ATTConfigConstants.AgentType]            = agentDictionary[ATTConfigConstants.AgentType]
+            resultDictionary[ATTConfigConstants.AgentURL]             = agentDictionary[ATTConfigConstants.AgentURL]
+            resultDictionary[ATTConfigConstants.AgentFlushInterval]   = agentDictionary[ATTConfigConstants.AgentFlushInterval]
+            resultDictionary[ATTConfigConstants.AgentPostToURL]       = agentDictionary[ATTConfigConstants.AgentPostToURL]
+            resultDictionary[ATTConfigConstants.AgentEnabled]         = agentDictionary[ATTConfigConstants.AgentEnabled]
+        }
+        if let dataFieldDictionary = dataField {
+            resultDictionary[ATTConfigConstants.AgentKey]             = dataFieldDictionary[ATTConfigConstants.AgentKey]
+            resultDictionary[ATTConfigConstants.AgentKeyType]         = dataFieldDictionary[ATTConfigConstants.AgentKeyType]
+            resultDictionary[ATTConfigConstants.AppSpecificMethod]    = dataFieldDictionary[ATTConfigConstants.AppSpecificMethod]
+            resultDictionary[ATTConfigConstants.AppSpecificClass]     = dataFieldDictionary[ATTConfigConstants.AppSpecificClass]
+            resultDictionary[ATTConfigConstants.AppSpecificKey]       = dataFieldDictionary[ATTConfigConstants.AppSpecificKey]
+            resultDictionary[ATTConfigConstants.AgentParam]           = dataFieldDictionary[ATTConfigConstants.AgentParam]
+        }
+        
+        return resultDictionary
     }
 }

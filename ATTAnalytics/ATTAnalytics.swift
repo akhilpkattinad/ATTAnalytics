@@ -13,46 +13,22 @@ public class ATTAnalytics: NSObject {
     
     
     
-    // MARK: Public members
     // MARK: Pubclic Constants
     public static let TrackingNotification      = "RegisterForTrakingNotification"
     public static let CrashTrackingNotification = "RegisterForCrashTrakingNotification"
     public static let IdentifyNotification      = "IndentifyUser"
     public static let LoggoutNotification       = "loggoutUser"
-    
     public static let kAppLanguage              = "language"
-    
-    
-    // For Objective - C support since the converted framework not supporting swift enums
-    public static let TrackingTypeAuto          = "Auto"
-    public static let TrackingTypeManual        = "Manual"
-    
-    public var appID:String?
-    public var trackingStateTypes: TrackingTypes?
-    public var trackingMethodTypes: TrackingTypes?
-    
-    public var appInformationDictionary: [String:Any]?
-    
-    
-    public var appVariant = ""
-    public var isDebug    = false
-    
-    // MARK: Enums
-    public enum TrackingTypes {
-        case Automatic
-        case Manual
-    }
-    
-    // MARK: Private members
+    private static let crashLogFileName         = "ATTCrashLog.log"
+    public static let kAppVariant               = "AppVariant"
+
     enum StateTypes {
         case State
         case Event
     }
     
-    private static let crashLogFileName = "ATTCrashLog.log"
-    
+    public var analyticsConfiguration: ATTAnalyticsConfiguration!
     private var configParser:ATTConfigParser?
-    
     private var configurationFilePath:String?
     private var presentViewControllerName:String?
     private var previousViewControllerName:String?
@@ -78,7 +54,6 @@ public class ATTAnalytics: NSObject {
         struct Static {
             static let instance = ATTAnalytics()
         }
-        
         return Static.instance
     }
     
@@ -92,116 +67,29 @@ public class ATTAnalytics: NSObject {
         NotificationCenter.default.removeObserver(self)
     }
     
-    // MARK: - Public Methods
-    // Method with Local resource path
-    public func beginTracking(appID:String?, pathForConfigFile:String?) -> Void {
-        
-        self.beginTracking(appID:appID,
-                           pathForConfigFile:pathForConfigFile,
-                           stateTrackingType:.Manual,
-                           actionTrackingType:.Manual)
-    }
-    
-    public func beginTracking(appID:String?,
-                              pathForConfigFile:String?,
-                              stateTrackingType stateType:TrackingTypes?,
-                              actionTrackingType methodType:TrackingTypes?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID                         = appID
-        self.trackingStateTypes            = stateType
-        self.trackingMethodTypes           = methodType
-        self.appVariant                    = variant
-        self.isDebug                       = isfrmaeWorkDebug
-        self.appInformationDictionary      = appDictionary
-        
-        self.configurationFilePath = pathForConfigFile
-        self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
-        self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
-        self.setupMiddlewareManager()
-    }
-    
-    // Method with configurations as Dictionary
-    public func beginTracking(appID:String?, configuration:Dictionary<String, AnyObject>?) -> Void {
-        self.beginTracking(appID:appID, configuration:configuration, stateTrackingType:.Manual, actionTrackingType:.Manual)
-    }
-    
-    public func beginTracking(appID:String?,
-                              configuration:Dictionary<String, AnyObject>?,
-                              stateTrackingType stateType:TrackingTypes?,
-                              actionTrackingType methodType:TrackingTypes?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug",isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID                      = appID
-        self.appVariant                 = variant
-        self.isDebug                    = isfrmaeWorkDebug
-        self.trackingStateTypes         = stateType
-        self.trackingMethodTypes        = methodType
-        self.appInformationDictionary   = appDictionary
-        
-        self.createConfigParser(configurations:configuration)
-        self.configureSwizzling(stateTracking:stateType, methodTracking:methodType)
-        self.setupMiddlewareManager()
-    }
-    
-    // Support of Objective - C
-    // Swift project not required the below function calls
-    public func beginTracking(appID:String?,
-                              pathForConfigFile:String?,
-                              stateTrackingType stateType:String?,
-                              actionTrackingType methodType:String?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID                      = appID
-        self.appVariant                 = variant
-        self.isDebug                    = isfrmaeWorkDebug
-        self.configurationFilePath      = pathForConfigFile
-        self.appInformationDictionary   = appDictionary
-        
-        self.createConfigParser(configurations:self.configurationDictionary() as? Dictionary<String, AnyObject>)
-        self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
-        self.setupMiddlewareManager()
-    }
-    
-    public func beginTracking(appID:String?,
-                              configuration:Dictionary<String, AnyObject>?,
-                              stateTrackingType stateType:String?,
-                              actionTrackingType methodType:String?,appInformationDictionary appDictionary: [String: Any]? = nil,appVariant variant: String = "debug", isfrmaeWorkDebug: Bool = false) -> Void {
-        self.appID                      = appID
-        self.appVariant                 = variant
-        self.isDebug                    = isfrmaeWorkDebug
-        self.appInformationDictionary   = appDictionary
-        
-        self.createConfigParser(configurations:configuration)
-        self.configureObjCEventTracking(stateTrackingType: stateType, actionTrackingType: methodType)
+    /// This Analytics initate to track the app event also pass appConfiguration objects to
+    ///
+    /// - Parameter appConfiguration: ATTAnalyticsConfiguration instance here define some configuration settings.
+    public func beginTracking(_ appConfiguration: ATTAnalyticsConfiguration) -> Void {
+        self.analyticsConfiguration = appConfiguration
+        self.createConfigParser(configurations:appConfiguration.appConfigurationDictionary)
+        self.configureSwizzling(stateTracking:appConfiguration.trackingStateTypes, methodTracking:appConfiguration.trackingMethodTypes)
         self.setupMiddlewareManager()
     }
     
     /// Can be called manually for Manual event tracking
-    /// **customArguments** is used when an object requires to trigger event with dynamic values
+    ///
+    /// - Parameters:
+    ///   - keyword: Event name
+    ///   - arguments: customArguments is used when an object requires to trigger event with dynamic values
+    ///   - event: ATTCustomEvent instance
     public func registerForTracking(appSpecificKeyword keyword:String?,
-                                    customArguments arguments:Dictionary<String, AnyObject>?,
+                                    customArguments arguments:[String:AnyObject]?,
                                     customEvent event:ATTCustomEvent?) -> Void {
-        
         var duration:Double = 0.0
         if let eventDuration = event?.duration {
             duration = eventDuration
         }
-        //Old
-        /*
-         let configuration = self.trackConfigurationForClass(aClass:nil,
-         withSelector:nil,
-         ofStateType:.Event,
-         havingAppSpecificKeyword:keyword,
-         withCustomArguments:arguments)
-         
-         var eventArguments = arguments
-         
-         if let configuration = configuration {
-         var customParams: [AnyObject] = []
-         for eachParam in configuration {
-         let customParamDict = ["agent":eachParam["agent"] as AnyObject,
-         "param":eachParam["param"] as AnyObject]
-         customParams.append(customParamDict as AnyObject)
-         }
-         
-         // eventArguments?["analyticEventParams"] = customParams as AnyObject
-         }*/
-        
         ATTMiddlewareSchemaManager.manager.createCustomEvent(eventName: keyword,
                                                              eventStartTime: Date(),
                                                              customArguments: arguments,
@@ -214,7 +102,7 @@ public class ATTAnalytics: NSObject {
         if let crashLogData = self.readLastSavedCrashLog() {
             
             if (crashLogData as String).characters.count > 0 {
-                var notificationObject = [String: AnyObject]()
+                var notificationObject: [String: AnyObject] = [:]
                 
                 notificationObject["type"]          = "CrashLogTracking" as AnyObject?
                 notificationObject["crash_report"]  = crashLogData as AnyObject?
@@ -227,8 +115,14 @@ public class ATTAnalytics: NSObject {
     }
     
     // MARK: - User info
+    
+    /// User info
+    ///
+    /// - Parameters:
+    ///   - userId: userID string
+    ///   - profile: userProfile Dictionary
     public func identifyUser(userID userId:String,
-                             userProfile profile:Dictionary<String, AnyObject>?) -> Void {
+                             userProfile profile:[String:AnyObject]?) -> Void {
         
         UserDefaults.standard.setValue(userId, forKey: "ATTUserID")
         UserDefaults.standard.setValue(profile, forKey: "ATTUserProfile")
@@ -236,6 +130,7 @@ public class ATTAnalytics: NSObject {
                                         object:nil)
     }
     
+    /// Reset User
     public func resetUser() -> Void {
         
         UserDefaults.standard.setValue("", forKey: "ATTUserID")
@@ -244,49 +139,42 @@ public class ATTAnalytics: NSObject {
                                         object:nil)
     }
     
-    
-    /////////////////////////////////////////////////////////////////////////////////////
     // MARK: - Private methods
+    
+    /// setup MiddlewareManager calss
     private func setupMiddlewareManager() -> Void {
         ATTMiddlewareSchemaManager.manager.startUpdatingLocations()
         ATTMiddlewareSchemaManager.manager.startFlushManager()
         ATTMiddlewareSchemaManager.manager.appInfo = self.appInfo()
     }
     
-    private func configureObjCEventTracking(stateTrackingType stateType:String?,
-                                            actionTrackingType methodType:String?) -> Void {
-        var sType:TrackingTypes = .Manual
-        var mType:TrackingTypes = .Manual
-        if stateType == ATTAnalytics.TrackingTypeAuto {
-            sType = .Automatic
-        }
-        
-        if methodType == ATTAnalytics.TrackingTypeAuto {
-            mType = .Automatic
-        }
-        self.trackingStateTypes = sType
-        self.trackingMethodTypes = mType
-        self.configureSwizzling(stateTracking:sType, methodTracking:mType)
-    }
     
-    private func createConfigParser(configurations:Dictionary<String, AnyObject>?) -> Void{
+    /// Initiate ATTConfigParser class
+    ///
+    /// - Parameter configurations: configurations dictionary
+    private func createConfigParser(configurations:[String: Any]?) -> Void{
         self.configParser = nil
         self.configParser = ATTConfigParser(configurations:configurations)
     }
     
+    /// configure swizzling Method
+    ///
+    /// - Parameters:
+    ///   - state: TrackingTypes enum
+    ///   - method:TrackingTypes enum
     private func configureSwizzling(stateTracking state:TrackingTypes?,
                                     methodTracking method:TrackingTypes?) -> Void {
         if state == .Automatic {
             self.swizzileLifecycleMethodImplementation()
         }
-        
         if method == .Automatic {
             self.swizzileIBActionMethods()
         }
     }
     
-    /////////////////////////////////////////////////////////////////////////////////////
-    // Triggered for state changes
+    /// Triggered for state changes
+    ///
+    /// - Parameter viewController: viewController
     private func triggerEventForTheVisibleViewController(viewController:UIViewController) -> Void {
         self.trackConfigurationForClass(aClass:viewController.classForCoder,
                                         withSelector:self.stateChangeTrackingSelector,
@@ -295,7 +183,11 @@ public class ATTAnalytics: NSObject {
                                         withCustomArguments:nil)
     }
     
-    // Triggered for method invocation
+    /// Triggered for method invocation
+    ///
+    /// - Parameters:
+    ///   - originalClass: originalClass
+    ///   - selector: selector method
     private func triggerEventForTheVisibleViewController(originalClass:AnyClass?, selector:Selector?) -> Void {
         self.trackConfigurationForClass(aClass:originalClass,
                                         withSelector:selector,
@@ -304,11 +196,19 @@ public class ATTAnalytics: NSObject {
                                         withCustomArguments:nil)
     }
     
-    // Looping through the configuration to find out the matching paramters and values
+    /// Looping through the configuration to find out the matching paramters and values
+    ///
+    /// - Parameters:
+    ///   - aClass: aClass
+    ///   - selector: method
+    ///   - type: auto or manual enum
+    ///   - keyword: havingAppSpecificKeyword
+    ///   - arguments: withCustomArguments
+    /// - Returns: return value description
     @discardableResult private func trackConfigurationForClass(aClass:AnyClass?,
                                                                withSelector selector:Selector?,
-                                                               ofStateType type:StateTypes?,
-                                                               havingAppSpecificKeyword keyword:String?,
+                                                               ofStateType type:StateTypes?,havingAppSpecificKeyword
+        keyword:String?,
                                                                withCustomArguments arguments:Dictionary<String, AnyObject>?) -> [AnyObject]? {
         
         let paramters = self.configurationForClass(aClass:aClass,
@@ -319,10 +219,17 @@ public class ATTAnalytics: NSObject {
         if let paramterArray = paramters,paramterArray.count > 0 {
             self.registeredAnEvent(configuration:paramters,
                                    customArguments:arguments)
-            
         }
         
         return paramters
+    }
+    // Parsing the Configuration file
+    private func fetchConfigurationDictionary(_ filePath: String?) ->[String:AnyObject]? {
+        guard  let resourcePath = filePath else {
+            return nil
+        }
+        let resourceData = NSDictionary(contentsOfFile: resourcePath)
+        return resourceData as? [String:AnyObject]
     }
     
     // Parsing the Configuration file
@@ -331,10 +238,17 @@ public class ATTAnalytics: NSObject {
             return nil
         }
         let resourceData = NSDictionary(contentsOfFile: resourcePath)
-        
         return resourceData
     }
     
+    /// Configuration for class
+    ///
+    /// - Parameters:
+    ///   - aClass: Class value
+    ///   - selector: Method selector
+    ///   - type: type
+    ///   - keyword: keyword
+    /// - Returns: Array of object
     private func configurationForClass(aClass:AnyClass?,
                                        withSelector selector:Selector?,
                                        ofStateType type:StateTypes?,
@@ -345,7 +259,6 @@ public class ATTAnalytics: NSObject {
         } else {
             state = ATTConfigConstants.AgentKeyTypeEvent
         }
-        
         let resultConfig = self.configParser?.findConfigurationForClass(aClass:aClass,
                                                                         withSelector:selector,
                                                                         ofStateType:state,
@@ -353,50 +266,54 @@ public class ATTAnalytics: NSObject {
         return resultConfig
     }
     
-    // Triggering a Notification, whenever it finds a matching configuration
+    
+    /// Triggering a Notification, whenever it finds a matching configuration
+    ///
+    /// - Parameters:
+    ///   - configuration: configuration
+    ///   - customArguments: customArguments
     private func registeredAnEvent(configuration:Array<AnyObject>?,
                                    customArguments:Dictionary<String, AnyObject>?) -> Void {
         
         var notificationObject:[String: AnyObject] = [:]
-        
         notificationObject["configuration"]     = configuration as AnyObject?
         notificationObject["custom_arguments"]  = customArguments as AnyObject?
         notificationObject["app_info"]          = self.appInfo() as AnyObject?
-        
         NotificationCenter.default.post(name:NSNotification.Name(rawValue:ATTAnalytics.TrackingNotification),
                                         object:notificationObject)
     }
     
+    /// Fetch app information
+    ///
+    /// - Returns: appInfo Dictionary
     private func appInfo() -> Dictionary<String, AnyObject>? {
+        
         let dictionary  = Bundle.main.infoDictionary
         let version     = dictionary?["CFBundleShortVersionString"] as? String
         let build       = dictionary?["CFBundleVersion"] as? String
         let appName     = dictionary?["CFBundleName"] as? String
         let bundleID    = Bundle.main.bundleIdentifier
         
-        var appInfoDictionary = [String: AnyObject]()
+        var appInfoDictionary: [String: AnyObject] = [:]
         
         appInfoDictionary["build"]          = build as AnyObject?
         appInfoDictionary["bundleVersion"]  = version as AnyObject?
         appInfoDictionary["bundleID"]       = bundleID as AnyObject?
         appInfoDictionary["bundleName"]     = appName as AnyObject?
-        
         return appInfoDictionary
     }
     
-    /////////////////////////////////////////////////////////////////////////////////////
     // MARK: - Crashlog file manipulations
     private func readLastSavedCrashLog() -> String? {
         let fileName = ATTAnalytics.crashLogFileName
         let filePath = self.cacheDirectory.appending(fileName)
-        var dataString:String = String()
+        var dataString: String?
         
         if self.fileManager.fileExists(atPath:filePath) {
             if let crashLogData = NSData(contentsOfFile:filePath) {
-                dataString = NSString(data:crashLogData as Data, encoding:String.Encoding.utf8.rawValue) as! String
+                dataString = NSString(data:crashLogData as Data, encoding:String.Encoding.utf8.rawValue) as String?
             }
         }
-        
         // To avoid complexity in reading and parsing the crash log, keeping only the last crash information
         // For allowing this, previous crash logs are deleted after reading
         self.removeLastSavedCrashLog()
@@ -416,6 +333,7 @@ public class ATTAnalytics: NSObject {
     /////////////////////////////////////////////////////////////////////////////////////
     // MARK: - Automatic screen change tracking
     // MUST BE CALLED ONLY ONCE
+    
     private func swizzileLifecycleMethodImplementation() -> Void {
         let originalClass = UIViewController.self
         let swizzilableClass = ATTAnalytics.self
@@ -425,25 +343,35 @@ public class ATTAnalytics: NSObject {
         // WillAppear and DidDisappear is done to track maximum events
     }
     
+    /// ViewWillAppear method exchangeImplementations
+    ///
+    /// - Parameters:
+    ///   - originalClass: originalClass
+    ///   - swizzilableClass: swizzilableClass
     private func swizzileViewWillAppear(originalClass:AnyClass?, and swizzilableClass:AnyClass?) -> Void {
         let swizzilableSelector = #selector(ATTAnalytics.trackViewWillAppear(_:))
         self.stateChangeTrackingSelector = #selector(UIViewController.viewWillAppear(_:))
-        
         let originalMethod = class_getInstanceMethod(originalClass, self.stateChangeTrackingSelector!)
         let swizzledMethod = class_getInstanceMethod(swizzilableClass, swizzilableSelector)
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }
     
+    /// ViewDidDisappear method exchangeImplementations
+    ///
+    /// - Parameters:
+    ///   - originalClass: originalClass
+    ///   - swizzilableClass: swizzilableClass
     private func swizzileViewDidDisappear(originalClass:AnyClass?, and swizzilableClass:AnyClass?) -> Void {
         let swizzilableSelector = #selector(ATTAnalytics.trackViewDidDisappear(_:))
         let originalSelector = #selector(UIViewController.viewDidDisappear(_:))
-        
         let originalMethod = class_getInstanceMethod(originalClass, originalSelector)
         let swizzledMethod = class_getInstanceMethod(swizzilableClass, swizzilableSelector)
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }
     
-    // Swizzled methods
+    /// viewWillAppear Swizzled methods
+    ///
+    /// - Parameter animated: is animated
     func trackViewWillAppear(_ animated: Bool) -> Void {
         // Here self refers to the UIViewController, self.autoTrackScreenChanges() will crash
         if "\(self.classForCoder)" != "UINavigationController"
@@ -454,16 +382,21 @@ public class ATTAnalytics: NSObject {
         }
     }
     
+    /// trackViewDidDisappear
+    ///
+    /// - Parameter animated: is animated
     func trackViewDidDisappear(_ animated: Bool) -> Void {
         // Here self refers to the UIViewController, self.autoTrackScreenChanges() will crash
         if "\(self.classForCoder)" != "UINavigationController"
             && "\(self.classForCoder)" != "UITabBarController"
             && "\(self.classForCoder)" != "UIInputWindowController" {
-            
             ATTAnalytics.helper.screenDisappeared(viewController: self)
         }
     }
     
+    /// view Appeared method call
+    ///
+    /// - Parameter viewController: Appeared viewController
     func newScreenAppeared(viewController:NSObject?) -> Void {
         if let topViewController = viewController as? UIViewController {
             self.presentViewControllerName = "\(topViewController.classForCoder)"
@@ -474,10 +407,18 @@ public class ATTAnalytics: NSObject {
         }
     }
     
+    /// view Disappeared method call
+    ///
+    /// - Parameter viewController: Disappeared controller
     func screenDisappeared(viewController:NSObject?) -> Void {
         self.updatePreviousScreenActivityObject()
     }
     
+    /// Create screenview event
+    ///
+    /// - Parameters:
+    ///   - aClass: class name
+    ///   - title: controller title
     private func createNewScreenView(withClass aClass:AnyClass?, screenTitle title:String?) -> Void {
         self.screenViewID = self.schemaManager.newUniqueID()
         self.screenViewStart = self.currentLocalDate()
@@ -495,7 +436,6 @@ public class ATTAnalytics: NSObject {
         ATTMiddlewareSchemaManager.manager.updateScreenCloseDetails()
     }
     
-    /////////////////////////////////////////////////////////////////////////////////////
     // MARK: - Automatic function call tracking
     // MUST BE CALLED ONLY ONCE
     private func swizzileIBActionMethods() -> Void {
@@ -510,19 +450,29 @@ public class ATTAnalytics: NSObject {
         method_exchangeImplementations(originalMethod, swizzledMethod)
     }
     
-    // Swizzled method which will be replacing the original UIApplication's sendAction method
+    ///  Swizzled method which will be replacing the original UIApplication's sendAction method
+    ///
+    /// - Parameters:
+    ///   - action: action description
+    ///   - target: target description
+    ///   - sender: sender description
+    ///   - event: event description
     func trackIBActionInvocation(_ action:Selector, to target:Any?, from sender:Any?, for event:UIEvent?) -> Void {
         if let originalObject = target as? NSObject {
             let originalClass:AnyClass = originalObject.classForCoder as AnyClass
             ATTAnalytics.helper.autoTrackMethodInvocationForClass(originalClass:originalClass, selector:action)
         }
-        
         // Inorder to call the original implementation, perform the 3 below steps
         ATTAnalytics.helper.swizzileIBActionMethods()
         UIApplication.shared.sendAction(action, to:target, from:sender, for:event)
         ATTAnalytics.helper.swizzileIBActionMethods()
     }
     
+    /// AutoTrackMethodInvocationForClass
+    ///
+    /// - Parameters:
+    ///   - originalClass: originalClass description
+    ///   - selector: selector description
     func autoTrackMethodInvocationForClass(originalClass:AnyClass?, selector:Selector?) -> Void {
         self.triggerEventForTheVisibleViewController(originalClass:originalClass, selector:selector)
         ATTMiddlewareSchemaManager.manager.createIBActionEvent(eventName: "\(selector!)", eventStartTime: Date())

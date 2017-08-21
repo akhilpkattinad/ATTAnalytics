@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		39059C5B1F29A6DC00A168CF /* ATTDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */; };
 		39059C5C1F29A6DC00A168CF /* ATTDB.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F9664B1F1E5560DA00189300 /* ATTDB.xcdatamodeld */; };
+		3923451C1F46C95B009763F2 /* ATTAnalyticsConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3923451B1F46C95B009763F2 /* ATTAnalyticsConfiguration.swift */; };
 		39A330771F0629DB00987C8E /* ATTFlushManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A330761F0629DB00987C8E /* ATTFlushManager.swift */; };
 		F91A30D11E8554B800FCF7BB /* ATTReachability.swift in Sources */ = {isa = PBXBuildFile; fileRef = F91A30D01E8554B800FCF7BB /* ATTReachability.swift */; };
 		F91A30D31E8554C800FCF7BB /* SystemConfiguration.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F91A30D21E8554C800FCF7BB /* SystemConfiguration.framework */; };
@@ -32,6 +33,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3923451B1F46C95B009763F2 /* ATTAnalyticsConfiguration.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ATTAnalyticsConfiguration.swift; sourceTree = "<group>"; };
 		39A330761F0629DB00987C8E /* ATTFlushManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ATTFlushManager.swift; sourceTree = "<group>"; };
 		F91A30D01E8554B800FCF7BB /* ATTReachability.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ATTReachability.swift; sourceTree = "<group>"; };
 		F91A30D21E8554C800FCF7BB /* SystemConfiguration.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SystemConfiguration.framework; path = System/Library/Frameworks/SystemConfiguration.framework; sourceTree = SDKROOT; };
@@ -103,6 +105,7 @@
 		F927955D1E1F6A8F00C7B0EA /* ATTAnalytics */ = {
 			isa = PBXGroup;
 			children = (
+				3923451B1F46C95B009763F2 /* ATTAnalyticsConfiguration.swift */,
 				39A330761F0629DB00987C8E /* ATTFlushManager.swift */,
 				F91A30D01E8554B800FCF7BB /* ATTReachability.swift */,
 				F9664B1D1E5560DA00189300 /* ATTCoreDataManager.swift */,
@@ -266,6 +269,7 @@
 				F9664B2F1E5560DA00189300 /* ATTLocationManager.swift in Sources */,
 				F91A30D11E8554B800FCF7BB /* ATTReachability.swift in Sources */,
 				F927956C1E1F6AB500C7B0EA /* ATTConfigParser.swift in Sources */,
+				3923451C1F46C95B009763F2 /* ATTAnalyticsConfiguration.swift in Sources */,
 				F9664B351E5560DA00189300 /* ContainerResponse.swift in Sources */,
 				F9664B301E5560DA00189300 /* ATTMiddlewareSchemaManager.swift in Sources */,
 				F9664B2B1E5560DA00189300 /* ATTCustomEvent.swift in Sources */,

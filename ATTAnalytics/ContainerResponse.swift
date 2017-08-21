@@ -10,7 +10,7 @@ import Foundation
 
 class ContainerResponse: NSObject {
     // MARK: Properties
-    var responseDictionary:Dictionary<String, AnyObject>?
+    var responseDictionary:[String:AnyObject]?
     var responseError:Error?
     var response:URLResponse?
     
@@ -19,7 +19,7 @@ class ContainerResponse: NSObject {
         super.init()
     }
     
-    convenience init(parsedResponse:Dictionary<String, AnyObject>?,
+    convenience init(parsedResponse:[String:AnyObject]?,
                      error:Error?,
                      response:URLResponse?) {
         self.init()
