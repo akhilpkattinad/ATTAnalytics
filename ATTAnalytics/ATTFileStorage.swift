@@ -3,7 +3,7 @@
 //  TrackingHelper
 //
 //  Created by Adarsh GJ on 11/08/17.
-//  Copyright © 2017 Sreekanth R. All rights reserved.
+//  Copyright © 2017 Adarsh GJ. All rights reserved.
 //
 
 import UIKit

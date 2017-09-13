@@ -109,7 +109,7 @@ class ATTFlushManager: NSObject {
             return
         }
         // API endpoit
-        let requestPath = "save"
+        let requestPath = "/event/device/log"
         let request = ContainerRequest(requestURL:requestPath,
                                        requestParams:schema,
                                        requestPriority: .Normal)
@@ -372,7 +372,7 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> [String:Any] {
-        return ["version":"1.0.1","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"release"]
+        return ["version":"1.0.2","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"release"]
     }
     
     private func deviceOSInfo() -> [String:Any] {

@@ -12,8 +12,8 @@ class Container: NSObject {
     typealias completionHandler = (_ response:ContainerResponse?) -> Void
     
     // MARK: Private variables
-    var baseURL      = "http://111.93.108.38:8089/Analytics/"
-    var debugBaseURL = "http://192.168.2.245:8080/Analytics/"
+    var baseURL      = "http://13.126.181.33:8086"
+    var debugBaseURL = "http://13.126.181.33:8086"
     
     var completion:completionHandler?
     private var operationQueue:OperationQueue?
