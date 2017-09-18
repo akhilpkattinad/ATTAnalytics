@@ -274,11 +274,11 @@ class ATTFlushManager: NSObject {
     
     func syncableSessionObject() -> [String:Any] {
         var eventsArray: [Any] = []
-        if self.handShakeCompleted == false {
-            eventsArray.append(self.sessionInfo())
-        }
         if self.identificationRequired == true {
             eventsArray.append(self.identificationObject())
+        }
+        if self.handShakeCompleted == false {
+            eventsArray.append(self.sessionInfo())
         }
         let data = ["events":eventsArray] as [String : Any]
         return data
