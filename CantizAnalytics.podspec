@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|  
     s.name              = 'CantizAnalytics'
-    s.version           = '1.0.3'
+    s.version           = '1.0.4'
     s.summary           = 'A really cool SDK for simplifying the use of differnet analytics.'
     s.homepage          = 'https://github.com/akhilpkattinad/ATTAnalytics'
 

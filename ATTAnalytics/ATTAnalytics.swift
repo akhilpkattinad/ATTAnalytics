@@ -291,7 +291,8 @@ public class ATTAnalytics: NSObject {
         let dictionary  = Bundle.main.infoDictionary
         let version     = dictionary?["CFBundleShortVersionString"] as? String
         let build       = dictionary?["CFBundleVersion"] as? String
-        let appName     = dictionary?["CFBundleName"] as? String
+        
+        let appName     = dictionary?["CFBundleDisplayName"] as? String
         let bundleID    = Bundle.main.bundleIdentifier
         
         var appInfoDictionary: [String: AnyObject] = [:]

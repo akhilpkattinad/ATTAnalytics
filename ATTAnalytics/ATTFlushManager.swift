@@ -321,7 +321,7 @@ class ATTFlushManager: NSObject {
     private func appInfo() -> [String:Any] {
         let dictionary      = Bundle.main.infoDictionary
         let version         = dictionary?["CFBundleShortVersionString"]
-        let appName         = dictionary?["CFBundleName"]
+        let appName         = dictionary?["CFBundleDisplayName"]
         let bundleID        = Bundle.main.bundleIdentifier
         
         var appInfoDictionary : [String:Any] = [:]
