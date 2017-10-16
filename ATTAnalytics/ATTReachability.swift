@@ -74,4 +74,21 @@ class ATTReachability: NSObject {
         // Get carrier name
         return carrier?.carrierName
     }
+    func connectionSpeed() -> String {
+        let networkInfo = CTTelephonyNetworkInfo()
+        let networkString = networkInfo.currentRadioAccessTechnology
+        var speed = ""
+        if networkString == CTRadioAccessTechnologyLTE{
+            // LTE (4G)
+            speed = "4G"
+        }else if networkString == CTRadioAccessTechnologyWCDMA{
+            // 3G
+            speed = "3G"
+
+        }else if networkString == CTRadioAccessTechnologyEdge{
+            // EDGE (2G)
+            speed = "2G"
+        }
+        return speed
+    }
 }

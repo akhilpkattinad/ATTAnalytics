@@ -330,7 +330,7 @@ class ATTFlushManager: NSObject {
         appInfoDictionary["nameSpace"]      = bundleID
         appInfoDictionary["name"]           = appName
         appInfoDictionary["language"]       = fetchAppLanguage()
-        appInfoDictionary["build"]          = ""
+        appInfoDictionary["build"]          = dictionary?["CFBundleVersion"] ?? ""
         var appVariantValue                 = "debug"
         if let appDictionary = ATTAnalytics.helper.analyticsConfiguration.appInformationDictionary,let appVariant = appDictionary[ATTAnalytics.kAppVariant] as? String{
             appVariantValue = appVariant
@@ -372,7 +372,7 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> [String:Any] {
-        return ["version":"1.0.2","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"prod"]
+        return ["version":"1.0.5","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"prod"]
     }
     
     private func deviceOSInfo() -> [String:Any] {
@@ -407,8 +407,8 @@ class ATTFlushManager: NSObject {
             networkInfoDictionary["type"]    = "Cellular"
             networkInfoDictionary["carrier"] = ATTReachability.reachability.carrierName() ?? ""
         }
-        
-        networkInfoDictionary["connectionSpeed"] = ""
+        //2G,3G,4G
+        networkInfoDictionary["connectionSpeed"] = ATTReachability.reachability.connectionSpeed()
         
         return networkInfoDictionary
     }
