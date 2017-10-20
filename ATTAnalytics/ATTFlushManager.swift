@@ -67,10 +67,13 @@ class ATTFlushManager: NSObject {
          let appID = ATTAnalytics.helper.appID ?? ""
          let sessionID = "\(deviceId)-\(appID)-\(timeStamp)"
          */
-        let timeStamp = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+        let deviceTimestamp = "\(ATTMiddlewareSchemaManager.manager.deviceTimestamp)"
         
-        let sessionID = "\(currentUserID())-\(timeStamp)" //userid +time
-        self.encodedSessionString = self.base64Encoded(string: sessionID)!
+        let sessionID = "\(currentUserID())-\(deviceTimestamp)" //userid +time
+        
+        if let encodedSession = self.base64Encoded(string: sessionID){
+            self.encodedSessionString = encodedSession
+        }
         self.syncNewSession()
     }
     
@@ -290,7 +293,7 @@ class ATTFlushManager: NSObject {
         identificationDictionary["eventType"]   = "Identify"
         identificationDictionary["event"]       = "Identify"
         identificationDictionary["sessionId"]   = self.encodedSessionString
-        identificationDictionary["timestamp"]   = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+        identificationDictionary["timestamp"]   = "\(ATTMiddlewareSchemaManager.manager.deviceTimestamp)"
         identificationDictionary["userId"]      = self.currentUserID()
         identificationDictionary["service"]     = ATTAnalytics.helper.analyticsConfiguration.appID ?? ""
         identificationDictionary["os"]          = self.deviceOSInfo()
@@ -359,7 +362,7 @@ class ATTFlushManager: NSObject {
         sessionInfoDictionary["userId"]     = self.currentUserID()
         sessionInfoDictionary["event"]      = "SessionStart"
         sessionInfoDictionary["eventType"]  = "SessionStart"
-        sessionInfoDictionary["timestamp"]  = "\(ATTMiddlewareSchemaManager.manager.timeStamp())"
+        sessionInfoDictionary["timestamp"]  = "\(ATTMiddlewareSchemaManager.manager.deviceTimestamp)"
         sessionInfoDictionary["service"]      = ATTAnalytics.helper.analyticsConfiguration.appID ?? ""
         sessionInfoDictionary["os"]        = self.deviceOSInfo()
         sessionInfoDictionary["device"]    = self.deviceInfo()
@@ -372,7 +375,7 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> [String:Any] {
-        return ["version":"1.0.5","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"prod"]
+        return ["version":"1.0.6","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"prod"]
     }
     
     private func deviceOSInfo() -> [String:Any] {
@@ -450,8 +453,9 @@ public extension UIDevice {
     }
 }
 extension Date {
-    var millisecondsSince1970:Int {
-        return Int((self.timeIntervalSince1970 * 1000.0).rounded())
+    var millisecondsSince1970:Double {
+        return self.timeIntervalSince1970 * 1000.0
+    
     }
     
 }

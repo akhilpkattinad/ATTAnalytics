@@ -34,7 +34,7 @@ class ATTMiddlewareSchemaManager: NSObject {
         return ATTCoreDataManager()
     }()
     
-    var timestamp: String {
+    var deviceTimestamp: String {
         return "\(Date().millisecondsSince1970)"
     }
     
@@ -220,7 +220,7 @@ class ATTMiddlewareSchemaManager: NSObject {
     ///
     /// - Returns: <#return value description#>
     public func newUniqueID() -> String {
-        return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(self.timeStamp())"
+        return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(self.deviceTimestamp)"
     }
     
     /// <#Description#>
@@ -231,9 +231,9 @@ class ATTMiddlewareSchemaManager: NSObject {
         //userid = deviceid+bundleID
         return "\(UIDevice.current.identifierForVendor!.uuidString.replacingOccurrences(of: "-", with: ""))\(bundleID)"
     }
-    func timeStamp() -> String {
-        return self.timestamp
-    }
+//    func timeStamp() -> String {
+//        return self.timestamp
+//    }
 }
 
 // MARK: - Flush manager delegates
