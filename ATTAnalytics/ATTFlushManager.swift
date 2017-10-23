@@ -267,10 +267,10 @@ class ATTFlushManager: NSObject {
         }
         
         var eventsArray: [Any] = []
-        if self.identificationStatusUpdated == true {
-            eventsArray.append(self.identificationObject())
-        }
-        eventsArray = (eventsArray + screenViews + screenEvents)
+//        if self.identificationStatusUpdated == true {
+//            eventsArray.append(self.identificationObject())
+//        }
+        eventsArray =  screenViews + screenEvents
         let data = ["events":eventsArray] as [String : Any]
         return data
     }
@@ -375,7 +375,7 @@ class ATTFlushManager: NSObject {
     }
     
     private func libInfo() -> [String:Any] {
-        return ["version":"1.0.6","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"prod"]
+        return ["version":"1.0.7","variant":ATTAnalytics.helper.analyticsConfiguration.isDebugFrameWork ? "debug":"prod"]
     }
     
     private func deviceOSInfo() -> [String:Any] {
