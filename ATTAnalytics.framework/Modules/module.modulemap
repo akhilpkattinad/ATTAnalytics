@@ -7,5 +7,4 @@ framework module ATTAnalytics {
 
 module ATTAnalytics.Swift {
     header "ATTAnalytics-Swift.h"
-    requires objc
 }
